@@ -1,5 +1,4 @@
-# Feb. 5th
-## Codes for Question 1: 
+Codes for Question 1: 
 import pandas as pd
 
 path_to_data = 'gapminder.tsv'
