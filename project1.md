@@ -15,6 +15,7 @@ The country with lowest life expectancy is Rwanda with a life expectancy of 23.5
 
 # 5.
 In 2007, the GDP of these fou countries are:
+
 | country | continent |      gdp     |
 | ------- | :-------: | :----------- |
 | Germany |  Europe   | 2.650871e+12 |
@@ -23,6 +24,7 @@ In 2007, the GDP of these fou countries are:
 | Spain   |  Europe   | 1.165760e+12 |
 
 In 2002, the GDP of these fou countries are:
+
 | country | continent |      gdp     |
 | ------- | :-------: | :----------- |
 | Germany |  Europe   | 2.473468e+12 |
