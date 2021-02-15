@@ -55,7 +55,7 @@ For example, ```display(data.loc[100:200])```would return date from row 100 to r
 An API refers to Application Programming Interface. It is an intermediary that allows different applications to exchange data and functionalities in order to process requests.
 
 # 9.
-The ```apply.()```function allows users to apply a function to all values in a given series of data; it can simplify the use of loops. ".apply()" can apply a function to each row/column in a dataframe. By using ".apply()" command that works for the entire series, we don't have to type out the the whole function again and run it with different values of the variables, which not only saves time for coding but also lower the risk of making additional mistakes.
+The ```apply.()```function allows users to apply a function to all values in a given series of data; it can simplify the use of loops or functions. ".apply()" can apply a function to each row/column in a dataframe. By using ".apply()" command that works for the entire series, we don't have to type out the the whole function again and run it with different values of the variables, which not only saves time for coding and for the program to run, but also lower the risk of making additional mistakes.
 
 # 10.
 We can simply type out the name of desired columns to subset the original data frame. Considering the "gapminder.csv" file, ```print(data[['country', 'continent', 'year', 'lifeExp', 'pop']])``` and ```print(data.iloc(: , 0:5))```can both be applied to extract "country", "continent", "year", "lifeExp" and "pop" columns.
