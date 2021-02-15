@@ -3,8 +3,9 @@ Package is a directory that contains a ```__init__.py``` file which may include 
 
 # 2.
 Data frame is a table with labeled columns of different data. “Pandas” library is most useful with data frames. Use the ```read_() ``` command from pandas library to specify the library and path to file to locate a file in the operating system. Since data is stored in different types, we need to specify which type of data we re reading (html, csv, etc.). To inform pandas that we are using a tab-separated file instead of a default comma-separated file, use the command ```new_object = library_name.function_name(path_to_file_object, sep = '\t')```
-Use the command ```data.describe()``` to decribe the data.
-For "gapminder.csv" file, there are 6 columns and 1704 rows. 
+
+Use the command ```data.describe()``` to decribe the data. For "gapminder.csv" file, there are 6 columns and 1704 rows. 
+
 To return a list of just the column names, use ```list(data.columns)```, or the``` .describe()``` command.
 
 # 3.
@@ -35,8 +36,13 @@ In 2002, the GDP of these fou countries are:
 Spain has greatest increase in total GDP: 1.77403e+11
 
 # 6.
-"==" indicates that the statement of one variable equalling to a certain value is true. For example, ```data['continent']=='Asia'``` means this is the data subset of the continent Asia. "&" is the "and" symbol that is used when both statements are true in a given programming context. For example, when looking for the latest data of from a Asia,  use the command ```data_asia = data[(data['continent']=='Asia') & (data['year'] == data['year'].max())]```
-The "|" symbol is the "or" operator that would return true when at least one of the statements is correct. Foe example, this would return true: ```(1 + 1 == 2) | (1 + 2 > 3)```. " ^ " is the exclusive or symbol. The computer would only return true if only one statement is true while the other one is flase. It would return false if both statement are true or both are false. For example, ```(1 + 1 == 2) ^ ("cat" == "dog")```would return true but ```(1 + 1 > 2) ^ ("cat" == "dog")``` would return false. 
+"==" indicates that the statement of one variable equalling to a certain value is true. For example, ```data['continent']=='Asia'``` means this is the data subset of the continent Asia. 
+
+"&" is the "and" symbol that is used when both statements are true in a given programming context. For example, when looking for the latest data of from a Asia,  use the command ```data_asia = data[(data['continent']=='Asia') & (data['year'] == data['year'].max())]```
+
+The "|" symbol is the "or" operator that would return true when at least one of the statements is correct. Foe example, this would return true: ```(1 + 1 == 2) | (1 + 2 > 3)```. 
+
+" ^ " is the exclusive or symbol. The computer would only return true if only one statement is true while the other one is flase. It would return false if both statement are true or both are false. For example, ```(1 + 1 == 2) ^ ("cat" == "dog")```would return true but ```(1 + 1 > 2) ^ ("cat" == "dog")``` would return false. 
 
 # 7.
 ```.loc()```command is label-based. We need to specify the name of the rows or the columns to get the data. 
