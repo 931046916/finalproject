@@ -52,7 +52,9 @@ For example, ```display(data.loc[100:200])```would return date from row 100 to r
 ```display(data.iloc[:,1:5])```
 
 # 8.
-An API refers to Application Programming Interface. It is an intermediary that allows different applications to exchange data and functionalities in order to process requests. The following steps are how to construct a request to a remote server in order to pull data, write it to a local file and then import it to current work session.
+An API refers to Application Programming Interface. It is an intermediary that allows different applications to exchange data and functionalities in order to process requests. 
+
+The following steps are how to construct a request to a remote server in order to pull data, write it to a local file and then import it to current work session.
 ```python
 import request
 url = "https://api.covidtracking.com/v1/states/daily.csv"
