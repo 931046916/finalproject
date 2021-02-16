@@ -52,7 +52,33 @@ For example, ```display(data.loc[100:200])```would return date from row 100 to r
 ```display(data.iloc[:,1:5])```
 
 # 8.
-An API refers to Application Programming Interface. It is an intermediary that allows different applications to exchange data and functionalities in order to process requests.
+An API refers to Application Programming Interface. It is an intermediary that allows different applications to exchange data and functionalities in order to process requests. The following steps are how to construct a request to a remote server in order to pull data, write it to a local file and then import it to current work session.
+```python
+import request
+url = "https://api.covidtracking.com/v1/states/daily.csv"
+from datetime import datetime as dt
+```
+After importing request and specify the url we want to use, store the data in a new subfolder if this folder is not yet exist.
+```python
+import os
+data_folder = 'data' if not os.path.exists(data_folder): os.makedirs(data_folder)
+```
+construct the file name:
+```python
+file_name_short = 'ctp_' + str(dt.now(tz = pytz.utc)).replace(' ', '_') + '.csv'
+file_name = os.path.join(data_folder, file_name_short)
+```
+now we can retrieve our data using the url and open our output file for writing in binary mode:
+```python
+r = requests.get(url)
+with open(file_name, 'wb') as f:
+    f.write(r.content)
+```
+Finally, we import our newly created file as pandas data frame:
+```python
+import pandas as pd
+df = pd.read_csv(file_name)
+```
 
 # 9.
 The ```apply.()```function allows users to apply a function to all values in a given series of data; it can simplify the use of loops or functions. ".apply()" can apply a function to each row/column in a dataframe. By using ".apply()" command that works for the entire series, we don't have to type out the the whole function again and run it with different values of the variables, which not only saves time for coding and for the program to run, but also lower the risk of making additional mistakes.
