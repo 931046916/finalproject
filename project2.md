@@ -10,3 +10,4 @@ Continuous data is a numerical data that can take on a range of values, such as 
 The table shows the weight ranking, amount of daily sugar ingestion in grams and suggested body mass catagory for 4 men who are 6-feet-tall. The ranking of weight is an ordinal data that sequences the subjects' weights in decreasing order, amount of daily sugar ingestion is the continuous data that can be taken on a range of values, body mass catagory is the catagorical data that put the people into 4 catagories. There's a hypothetical correlation between daily sugar ingestion and weight ranking (the more grams of sugar one takes in per day, the higher weight ranking this person is likely to receive). 
 
 # Question 2
+Normal Distribution:
