@@ -11,20 +11,22 @@ The table shows the weight ranking, amount of daily sugar ingestion in grams and
 
 # Question 2
 ## Normal Distribution:  
-Mean: 0.503305    
-Median: 0.501722
-![Normal](https://user-images.githubusercontent.com/78099480/109432030-40e44a80-7a44-11eb-8229-7a5cccc9f307.png)
-
-## Right Skewed:  
-Mean: 0.167240    
-Median: 0.127668
-![RighrSk](https://user-images.githubusercontent.com/78099480/109432058-61140980-7a44-11eb-8db3-afcbb49ee2d9.png)
+Mean: 0.5008942053275507     
+Median: 0.5025070488362504  
+![norm](https://user-images.githubusercontent.com/78099480/109528349-8b6ed100-7aef-11eb-85e9-50eb55d9d6b9.png)
 
 ## Left Skewed:  
-Mean: 0.833068    
-Median: 0.873173
-![LeftSk](https://user-images.githubusercontent.com/78099480/109432083-80129b80-7a44-11eb-8900-cc4c67626e0f.png)
+Mean: 0.8334088906226477     
+Median: 0.8678073027102118  
+![lsk](https://user-images.githubusercontent.com/78099480/109528532-bc4f0600-7aef-11eb-9d0d-e052c9305f70.png)
+
+## Right Skewed:  
+Mean: 0.16748919817019833      
+Median: 0.1260774776528926  
+![rsk](https://user-images.githubusercontent.com/78099480/109528176-611d1380-7aef-11eb-874e-1eaec5a2d287.png)
 
 # Question 3
+## Raw Data
+![LifeExp](https://user-images.githubusercontent.com/78099480/109528656-e30d3c80-7aef-11eb-89e5-f6d766687c38.png)
 
 
