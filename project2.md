@@ -1,8 +1,8 @@
 # Question 1
-Continuous data is a numerical data that can take on a range of values, such as height, weight and length. The magnitude and difference between numbers are important. Ordinal data is numerical data with order or scale; what's important for them is only the order, not the difference between values. Examples include the order in which people accomplish something, satisfaction rate, education level, etc. Arithmetic calculations between ordinal data are meaningless. Nominal data are catagorical data like countries, gender, race, etc.   
+Continuous data is a numerical data that can take on a range of values, such as height, weight and length. The magnitude and difference between numbers are important. Ordinal data is numerical data with order or scale; what's important for them is only the order, not the difference between values. Examples include the order in which people accomplish something, satisfaction rate, education level, etc. Arithmetic calculations between ordinal data are meaningless. Nominal data are catagorical data like countries, gender, race, etc.  
 
 |Ranking of weight|Daily Sugar Ingestion|Body Mass Catagory| 
-| ----------------|:-------------------:| ----------------:| 
+| --------------- |:-------------------:| ----------------:| 
 |        1        |       130.94        |      Obese       | 
 |        2        |        80.25        |    Overweight    |  
 |        3        |        40.17        |      Normal      | 
