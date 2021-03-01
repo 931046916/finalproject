@@ -4,4 +4,4 @@
 
 ## Projects
 ### 1. [project1](https://serena-zheyiliu.github.io/DATA146_Serena/project1.html)
-### 2. [project2](https://serena-zheyiliu.github.io/DATA146_Serena/
+### 2. [project2]
