@@ -2,7 +2,7 @@
 Continuous data is a numerical data that can take on a range of values, such as height, weight and length. The magnitude and difference between numbers are important. Ordinal data is numerical data with order or scale; what's important for them is only the order, not the difference between values. Examples include the order in which people accomplish something, satisfaction rate, education level, etc. Arithmetic calculations between ordinal data are meaningless. Nominal data are catagorical data like countries, gender, race, etc.  
 
 Model Example:
-In a model predicting a person's health index, the features are this person's weight, amount of daily sugar ingestion in grams and anount of sleep per day. These features are continuous data that can be taken on a range of values. The health index is the target that indicates the person's health condition. This index is an ordinal data. Based on each individual's index, different people are grouped into different types: obese, overweight, normal, and underweight, which are catagorical data. 
+In a model predicting a person's health index, the features are this person's weight, amount of daily sugar ingestion in grams and anount of sleep per day. These features are continuous data that can be taken on a range of values. The health index is the target that indicates the person's health level. This index is an ordinal data. Based on each individual's index, different people are grouped into different types: obese, overweight, normal, and underweight, which are catagorical data. 
 
 # Question 2
 ## Normal Distribution:  
