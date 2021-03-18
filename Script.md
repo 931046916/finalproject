@@ -19,7 +19,276 @@ print(euro_sorted)
 
 print(data[['country', 'continent', 'year', 'lifeExp', 'pop']])
 
-##
+# ### Building a Data Pipeline
+# 
+# In this example project we wil write some code to download COVID-19 data from [The Covid Tracking Project](https://covidtracking.com/) and make a plot showing some statistics for a given state.
+# 
+# Our main goal with this project is to see how to develop an **automated Data Pipeline**.  The purpose of a Data Pipeline is to make your life is easy as possible when, inevitably, you have to go back and redo something.  Automation is a powerful tool that can save us a lot of time!
+# 
+# Along the way we will also see examples of:
+# - How to download files from the internet using the **requests** library
+# - How to load files and work with DataFrames using the **pandas** library
+# - Some simple processing including:
+#     - Working with dates
+#     - Subsetting/indexing **DataFrames**
+#     - Sorting lists
+#     - Splitting strings
+# - Making plots using the **matplotlib** library
+# 
+# This notebook will serve as our testing space.  Once we have figured out how to write the code and generate our plot, we will move into a new notebook and write our final, cleaned up version.
+# ___
+# 
+# ### Part 1) Get the data
+# The first thing we need to do is get our data.  Somtimes this is easier, sometimes it is harder!  In this case, since we're trying to download a .csv file, it will be rather easy.
+# 
+# We will use the **requests** library for this:
+​
+# In[1]:
+
+import requests
+
+# Before we download anything we need to do a little setup.
+
+# The data we are obtaining is updated (nearly) daily.  As such, we're probably going to want to get updates periodically, and also keep track of when our files were updated.  
+
+# One approach to this is to include a timestamp in the name of the file when we download it.  We're also going to be reformatting some of the dates within the file (you'll see why shortly).  
+# 
+# For all of our date/time related needs, we're going to import two additional libraries:
+
+# In[4]:
+
+# For adding timestamps to our files and working with/formatting dates within the files:
+from datetime import datetime as dt
+# This next library is all about timezones... more on that soon
+import pytz
+
+# The next thing to do is specify where our data is coming from:
+
+# In[6]:
+
+# URL for the file we want to download
+#url = "https://covidtracking.com/api/v1/states/daily.csv"
+# Note: The URL has changed (8.18.2020)
+url = "https://api.covidtracking.com/v1/states/daily.csv"
+
+# Whenever we download a fresh copy of the data, I'm going to add a timestamp to the file name.  This will allow us to always access the most recent file, while also saving older copies as a backup (just in case... you never know!)
+# 
+# Let's see how to create this timestamp using the now() function from the datetime module:
+
+# In[5]:
+
+
+dt.now()
+
+# In[7]:
+
+# Same as above, but represented as a string
+str(dt.now())
+
+# Just in case we move to a different timezone, or share our code with someone somewhere across the world, etc. we'll explicitly specify to put the timestamp in UTC [(Coordinated Universal Time)](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).  Otherwise, running the now() function on different computers may return different results, which is not desireable.
+# 
+# This is why we imported pytz:
+
+# In[8]:
+
+str(dt.now(tz = pytz.utc))
+
+# I might be nitpicking here a little - but it's not generally a good idea to include spaces in file names, folder names, variable names, etc.  Basically, **try to avoid using spaces for names of things**.
+# 
+# Here, I'll use the replace function to replace spaces with underscores:
+
+# In[9]:
+
+str(dt.now(tz = pytz.utc)).replace(' ', '_')
+
+# Great!  Now that we have that figured out, let's get our destination for the data setup.
+# 
+# To keep my folder clean, I'm going to save the data in a subfolder called 'data'. Let's check to see if this folder already exists, and if not, we'll create it.
+
+# In[11]:
+
+# Use the os library for this
+import os
+data_folder = 'data'
+if not os.path.exists(data_folder):
+    os.makedirs(data_folder)
+
+# In[12]:
+
+# Now construct the file name
+file_name_short = 'ctp_' + str(dt.now(tz = pytz.utc)).replace(' ', '_') + '.csv'
+file_name = os.path.join(data_folder, file_name_short)
+
+# In[13]:
+
+file_name
+
+# We are now ready to download our data!
+# In[15]:
+
+# This retrieves the contents of the URL
+r = requests.get(url)
+# We are openining (creating) our output file for writing (w) in binary mode (b)
+# Using the 'with' statement will immediately close the file once we are done writing
+# (This is the kind of thing you should just google if you forget how to do it!)
+with open(file_name, 'wb') as f:
+    f.write(r.content)
+
+# Now we'll import the file we just downloaded as a pandas DataFrame:
+
+# In[16]:
+
+import pandas as pd
+df = pd.read_csv(file_name)
+
+# We can inspect the first (head) or last (tail) rows of the DataFrame to make sure everything looks OK:
+
+# In[18]:
+
+df.columns
+
+# ### Test your understanding:
+# 
+# 1. What is the goal of this project?  What are we trying to produce?
+# 2. Why is it important to have an automated Data Pipeline?
+# 3. What have we accomplished so far?
+
+# ### Part 2) Some filtering/preprocessing
+# 
+# Once we have our hands on some data, the next step is to determine if any preprocessing is necessary.  Preprocessing basically refers to any adjustments/corrections that need to be made to the data before we build a model or produce our final output. We will be learning about various types of preprocessing throughout this course - for now, we just have a few simple adjustments to make.
+# 
+# First, we'll extract some columns of interest.  Let's get a list of the columns in the DataFrame:
+
+# In[19]:
+
+df.columns
+
+# Next, create a list of the columns we want to keep:
+
+# In[20]:
+
+cols = ['date', 'state','positive', 'death']
+
+# We're going to copy these columns into a new DataFrame.  **One important thing you should pay attention to here** is whether you are working with a 'copy' or a 'view' of the data.  I will have a supplementary notebook/video about this, but so we don't get too far off track for now - just trust me and don't forget to include .copy()!
+
+# In[21]:
+
+df_filtered = df[cols].copy()
+
+# In[22]:
+
+df_filtered
+
+# We're getting close!  Let's see if we can get a prototype of our plot working.  I want to plot data for a specific state, which will be specificed by the user.
+# 
+# Here's how to extract the data for a certain state.  Although this can be done in a single line of code, I usually prefer to do it in a few steps:
+
+# In[27]:
+
+# Specify the state we are looking for
+state = 'VA'
+# Determine which rows have data for this state
+idx_state = df_filtered['state']==state
+
+# In[28]:
+
+# This is a list of True/False (i.e., boolean) values, that will be True for rows containing the state we requested
+idx_state
+
+# In[25]:
+
+# We can check how many rows matched:
+sum(idx_state)
+
+# In[29]:
+
+# We can look at just those rows by subsetting the DataFrame with this True/False list
+df_filtered[idx_state]
+
+# Now would be a good time to make the first version of our plot and see if anything else needs to be changed!
+
+# In[30]:
+
+# Import a library for plotting
+import matplotlib.pyplot as plt
+
+# In[31]:
+
+metric = 'death'
+plt.plot(df_filtered['date'][idx_state], df_filtered[metric][idx_state])
+plt.show()
+
+# The main issue here is the dates. They are showing up like this because they are stored as integers. It will be much better to store them as actual date/time objects.
+# 
+# First, I'll extract just one date and show how we can convert it:
+
+# In[32]:
+
+test_date = df_filtered['date'][0]
+test_date
+
+# In[33]:
+
+# We'll make the conversion using the 'strptime' function
+# First, we need to specify the general format of the date.
+# You can look up all of the possible values here by googling the 'strptime' function
+#.   https://pubs.opengroup.org/onlinepubs/009695399/functions/strptime.html
+date_format = '%Y%m%d'
+
+dt.strptime(test_date, date_format)
+
+# It's important to get used to reading error messages like this and knowing how to find your own solution.  Debugging your code is often how you will be spending a lot of your time, and it is arguably one of the most important programming skills to have!
+
+# In[35]:
+
+# The error is telling us that the first argument (the date) needs to be a string.  Right now, it is an integer.
+type(test_date)
+
+# In[34]:
+
+# We can use the 'str' function:
+dt.strptime(str(test_date), date_format)
+
+# In[36]:
+
+# The next thing to do is to convert all of the dates in the DataFrame from integers into datetime objects
+# You could write a loop, but there is an easier way using the 'apply' function from pandas.
+
+df_filtered['date'].apply(lambda d: dt.strptime(str(d), date_format))
+
+# In[37]:
+
+# That looks good, so we'll go ahead and replace the original dates with this version
+df_filtered['date'] = df_filtered['date'].apply(lambda d: dt.strptime(str(d), date_format))
+
+# In[38]:
+
+df_filtered
+
+# The bold column is called the 'index' of the DataFrame.  Just like columns have column names, the index is essentially the name of each row.  We will set this index to be the date - this has some advantages for plotting, for example, Python will automatically attempt to use the index as the x-values on a plot, which will make our code a little shorter later on.
+
+# In[39]:
+df_filtered.index = df_filtered['date']
+
+df_filtered
+
+# We no longer have any need for the original date column, so might as well get rid of it:
+
+# In[41]:
+
+df_filtered = df_filtered.drop(columns=['date'])
+
+# In[42]:
+
+df_filtered
+
+# Last but not least, I'm going to rename the columns.  This is mainly for the purposes of keeping our code for plotting shorter - it will keep us from having to relabel certain parts of the plot.
+
+# In[43]:
+
+col_names = ['State', 'PositiveTests', 'TotalDeaths']
+df_filtered.columns = col_names
+
 ### Part 1. Data types ###
 ##########################
 
