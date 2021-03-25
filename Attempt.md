@@ -29,11 +29,11 @@ def DoKFold(model, X, y, k, standardize=False, random_state=146):
             
         model.fit(Xtrain, ytrain)
 
-        y_train_predict = model.predict(Xtrain)
-        y_test_predict = model.predict(Xtest)
+        ytrain_predict = model.predict(Xtrain)
+        ytest_predict = model.predict(Xtest)
         
-        mse_train.append(mean_squared_error(ytrain,y_train_predict))
-        mse_test.append(mean_squared_error(ytest,y_test_predict))
+        mse_train.append(mean_squared_error(ytrain,ytrain_predict))
+        mse_test.append(mean_squared_error(ytest,ytest_predict))
         
     return mse_train, mse_test
 
@@ -77,11 +77,11 @@ def DoKFold(model, X, y, k, standardize=False, random_state=146):
             
         model.fit(Xtrain, ytrain)
 
-        y_train_predict = model.predict(Xtrain)
-        y_test_predict = model.predict(Xtest)
+        ytrain_predict = model.predict(Xtrain)
+        ytest_predict = model.predict(Xtest)
         
-        mse_train.append(mean_squared_error(ytrain,y_train_predict))
-        mse_test.append(mean_squared_error(ytest,y_test_predict))
+        mse_train.append(mean_squared_error(ytrain,ytrain_predict))
+        mse_test.append(mean_squared_error(ytest,ytest_predict))
         
     return mse_train, mse_test
 
