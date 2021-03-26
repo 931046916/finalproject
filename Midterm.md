@@ -17,7 +17,7 @@
 
 ### Question 23
 
-### Question 24 Correction
+### Question 24
 #### Revised code
 ```python
 from sklearn.metrics import mean_squared_error
