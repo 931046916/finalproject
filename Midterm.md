@@ -1,6 +1,23 @@
 ## Midterm
-### Question 24
-If we had looked at MSE instead of R2 when doing our Lasso regression (question 20), what would we have determined the optimal value for alpha to be?  
+### Question 15
+
+### Question 16
+
+### Question 17
+
+### Question 18
+
+### Question 19
+
+### Question 20
+
+### Question 21
+
+### Question 22
+
+### Question 23
+
+### Question 24 Correction
 #### Revised code
 ```python
 from sklearn.metrics import mean_squared_error
