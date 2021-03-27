@@ -203,6 +203,10 @@ Run codes for Question 20 and then the following codes:
 idx = np.argmin(las_test_mse)
 print(las_a_range[idx], las_train[idx], las_test[idx], las_train_mse[idx], las_test_mse[idx])
 ```
+Results:
+```
+0.00186 0.6061563795668891 0.6021329052825213 0.524419071473502 0.5286007023316681
+```
 ### Reflection
 In my original code, apart from certain typo error, I also didn't standardize the data. These two mistakes end up giving me a 0.00100 optimal alpha value. I immediately found that 0.00100 is a weird result, but I just didn't realized that I missed the standardization process. After checking my code, what I found was only a typo error (in the last for loop, I mistakenly typed `las_reg` into `rid_reg`), but this didn't change the result. However, if the standardization process is added but the typo error is not removed, the optimal alpha value would be 0.00244, so the typo error is also insignificant. When typing in all the codes, I wrote the lines of code one after another, so it is quite difficult to locate the mistake after running all the codes. Maybe breaking these codes into small parts and run them little by little can make checking errors easier. I also need to review the questions carefully because I should have check the requirements of Question 20, this could have reminded me of the standardization problem.   
 I've attached the revision based on my original codes.
