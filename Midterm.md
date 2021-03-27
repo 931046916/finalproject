@@ -1,4 +1,61 @@
 ## Midterm
+### Importing Libraries 
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split as tts
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+```
+### Importing Dataset
+```python
+from sklearn.datasets import fetch_california_housing
+data = fetch_california_housing(as_frame=True)
+df = data.frame
+X = np.array(data.data)
+y = np.array(data.target)
+```
+### Define KFold
+```python
+def DoKFold(model, X, y, k, standardize=False, random_state=146):
+    if standardize:
+        from sklearn.preprocessing import StandardScaler as SS
+        ss = SS()
+
+    kf = KFold(n_splits=k, shuffle=True, random_state=random_state)
+   
+    train_scores = []
+    test_scores = []
+
+    train_mse = []
+    test_mse = []
+
+    for idxTrain, idxTest in kf.split(X):
+        Xtrain = X[idxTrain,:]
+        Xtest = X[idxTest,:]
+        ytrain = y[idxTrain]
+        ytest = y[idxTest]
+
+        if standardize:
+            Xtrain = ss.fit_transform(Xtrain)
+            Xtest = ss.transform(Xtest)
+
+        model.fit(Xtrain, ytrain)
+
+        train_scores.append(model.score(Xtrain, ytrain))
+        test_scores.append(model.score(Xtest, ytest))
+
+        ytrain_pred = model.predict(Xtrain)
+        ytest_pred = model.predict(Xtest)
+
+        train_mse.append(np.mean((ytrain - ytrain_pred)**2))
+        test_mse.append(np.mean((ytest - ytest_pred)**2))
+        
+    return train_scores, test_scores, train_mse, test_mse
+```
 ### Question 15
 
 ### Question 16
