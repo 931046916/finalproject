@@ -1027,4 +1027,318 @@ plt.legend(X_names, bbox_to_anchor=[1, 0.5], loc='center left')
 plt.xlabel('$\\alpha$')
 plt.ylabel('Coeff. Estimates')
 plt.show()
+
+
+
+### create your KFold function ###
+​
+def DoKFold(model, X, y, k, random_state=146, scaler=None):
+    '''Function will perform K-fold validation and return a list of K training and testing scores, inclduing R^2 as well as MSE.
+​
+        Inputs:
+            model: An sklearn model with defined 'fit' and 'score' methods
+            X: An N by p array containing the features of the model.  The N rows are observations, and the p columns are features.
+            y: An array of length N containing the target of the model
+            k: The number of folds to split the data into for K-fold validation
+            random_state: used when splitting the data into the K folds (default=146)
+            scaler: An sklearn feature scaler.  If none is passed, no feature scaling will be performed
+        Outputs:
+            train_scores: A list of length K containing the training scores
+            test_scores: A list of length K containing the testing scores
+            train_mse: A list of length K containing the MSE on training data
+            test_mse: A list of length K containing the MSE on testing data
+    '''
+​
+    from sklearn.model_selection import KFold
+    kf = KFold(n_splits=k, shuffle=True, random_state=random_state)
+​
+    train_scores = []
+    test_scores = []
+    train_mse = []
+    test_mse = []
+​
+    for idxTrain, idxTest in kf.split(X):
+        Xtrain = X[idxTrain, :]
+        Xtest = X[idxTest, :]
+        ytrain = y[idxTrain]
+        ytest = y[idxTest]
+​
+        if scaler != None:
+            Xtrain = scaler.fit_transform(Xtrain)
+            Xtest = scaler.transform(Xtest)
+​
+        model.fit(Xtrain, ytrain)
+​
+        train_scores.append(model.score(Xtrain, ytrain))
+        test_scores.append(model.score(Xtest, ytest))
+​
+        # Compute the mean squared errors
+        ytrain_pred = model.predict(Xtrain)
+        ytest_pred = model.predict(Xtest)
+        train_mse.append(np.mean((ytrain - ytrain_pred) ** 2))
+        test_mse.append(np.mean((ytest - ytest_pred) ** 2))
+​
+    return train_scores, test_scores, train_mse, test_mse
+​
+​
+### new functions ###
+​
+def GetColors(N, map_name='rainbow'):
+    '''Function returns a list of N colors from a matplotlib colormap
+            Input: N = number of colors, and map_name = name of a matplotlib colormap
+​
+            For a list of available colormaps:
+                https://matplotlib.org/3.1.1/gallery/color/colormap_reference.html
+    '''
+    import matplotlib
+    cmap = matplotlib.cm.get_cmap(name=map_name)
+    n = np.linspace(0, N, N) / N
+    colors = cmap(n)
+    return colors
+​
+​
+def PlotGroups(points, groups, colors, ec='black', ax='None'):
+    '''Function makes a scatter plot, given:
+            Input:  points (array)
+                    groups (an integer label for each point)
+                    colors (one rgb tuple for each group)
+                    ec (edgecolor for markers, default is black)
+                    ax (optional handle to an existing axes object to add the new plot on top of)
+            Output: handles to the figure (fig) and axes (ax) objects
+    '''
+    import matplotlib.pyplot as plt
+    import numpy as np
+​
+    # Create a new plot, unless something was passed for 'ax'
+    if ax == 'None':
+        fig, ax = plt.subplots()
+    else:
+        fig = plt.gcf()
+​
+    for i in np.unique(groups):
+        idx = (groups == i)
+        ax.scatter(points[idx, 0], points[idx, 1], color=colors[i],
+                   ec=ec, alpha=0.5, label='Group ' + str(i))
+    ax.set_xlabel('$x_1$')
+    ax.set_ylabel('$x_2$')
+    ax.legend(bbox_to_anchor=[1, 0.5], loc='center left')
+    return fig, ax
+​
+​
+def CompareClasses(actual, predicted, names=None):
+    '''Function returns a confusion matrix, and overall accuracy given:
+            Input:  actual - a list of actual classifications
+                    predicted - a list of predicted classifications
+                    names (optional) - a list of class names
+    '''
+    accuracy = sum(actual == predicted) / actual.shape[0]
+​
+    classes = pd.DataFrame(columns=['Actual', 'Predicted'])
+    classes['Actual'] = actual
+    classes['Predicted'] = predicted
+​
+    conf_mat = pd.crosstab(classes['Predicted'], classes['Actual'])
+​
+    if type(names) != type(None):
+        conf_mat.index = names
+        conf_mat.index.name = 'Predicted'
+        conf_mat.columns = names
+        conf_mat.columns.name = 'Actual'
+​
+    print('Accuracy = ' + format(accuracy, '.2f'))
+    return conf_mat, accuracy
+​
+###########################################
+### Classification: K-nearest neighbors ###
+###########################################
+​
+# Our topic this week is on **classification** techniques.  Classification, like all of the methods we've seen so far, refers to types of **supervised learning**.  With supervised learning, the model is being provided with information about what the correct answers are during the model training process.  In the case of classification, the targets we are trying to predict are labels (or classifications), rather than a continuous range of outputs as in regression.  These lables will often be nominal, or ordinal variables (in the case of an ordinal target, a regression approach might also be suitable).
+#
+# The first technique we'll discuss is called $K$-nearest neighbors - and it is one of those methods where the name basically tells you how it works!
+​
+### 1. Intro to kNN ###
+​
+# To get started, we'll look at some simulated data!  We're also going to be looking at a lot of the same types of plots throughout these examples, so we need to write a few quick functions that we'll be re-using.
+#
+# In this example, we'll generate three clusters of data in 2-dimensions, plot each group with a different color, generate a new random point, and then see how k-NN would classify this new random point.
+​
+# Do some testing with data that is clearly in clusters
+# Import some standard libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+​
+# Make some blobs of data
+from sklearn.datasets import make_blobs as mb
+​
+# Specify how many blobs
+n_groups = 3
+# Specify how many total points
+n_points = 100
+# Specify how many dimensions (how many features)
+n_feats = 2
+​
+np.random.seed(146)
+data = mb(n_samples = n_points, n_features=n_feats, centers = n_groups)
+X = data[0]
+y = data[1]
+​
+colors = GetColors(n_groups)
+​
+# Make a plot of this data, color each group separately
+for yi in np.unique(y):
+    # Plot the rows of data with the current value of yi
+    idx = (y==yi)
+    plt.scatter(X[idx,0], X[idx,1],color=colors[yi], ec='k',s=100, label = 'Group ' + str(yi))
+# Create a new data point
+random_point = np.random.random(size=n_feats)
+# Add this point to the plot
+plt.scatter(random_point[0], random_point[1], color='grey', s=150, ec='k')
+plt.legend()
+plt.show()
+​
+# Do KNN to classify the new point
+from sklearn.neighbors import KNeighborsClassifier as KNN
+knn = KNN(n_neighbors=20)
+knn.fit(X,y)
+knn.predict(random_point.reshape(1,-1))
+​
+### second iteration ###
+​
+np.random.seed(146)
+​
+centers =[[0,0], [5,5]]
+n_points = [2, 10]
+data = mb(n_samples=n_points, centers=centers)
+X = data[0]
+y = data[1]
+​
+# Create a new point
+new_point = np.random.random(n_feats)
+​
+colors = GetColors(len(np.unique(y)))
+PlotGroups(X,y,colors)
+plt.scatter(new_point[0], new_point[1],color='grey',s=100)
+plt.title('What will the grey point be classified as?')
+plt.show()
+​
+knn = KNN(n_neighbors=5)
+knn.fit(X,y)
+knn.predict(new_point.reshape(1,-1))
+​
+# This is the result of something called **class imbalance**.  The default value being used here of $k=5$ means that no matter what the location of the new point is, it will always be classified as red, since there are only 2 purple points.
+#
+# Although this example is artificially small in terms of the total amount of data, class imbalance can certainly apply to much larger data sets.  In cases like that, it might be beneficial to **undersample** an overrepresented group, or **oversample** (e.g., by bootstrapping) an underrepresented group.
+#
+# We won't spend too much time on that though.  Instead you might also think, "Why don't we just reduce the value of $k$?".  In this case, that would probably work:
+​
+knn = KNN(n_neighbors=1)
+knn.fit(X,y)
+knn.predict(new_point.reshape(1,-1))
+​
+​
+# However, choosing a value for $k$ that is too small can make the algorithm too sensitive to local noise in the data.
+#
+# Let's take a look at a larger data set.  We'll go back to the breast cancer data set, and for the purposes of simplicity in visualization, I'll pretend we only have 2 independent variables.
+​
+from sklearn.datasets import load_breast_cancer as lbc
+from sklearn.model_selection import train_test_split as tts
+​
+data = lbc()
+X = data.data
+X_names = data.feature_names
+y = data.target
+y_names = data.target_names
+​
+Xdf = pd.DataFrame(X, columns=X_names)
+​
+cols = ['mean perimeter', 'mean fractal dimension']
+Xsubset = Xdf[cols]
+​
+# Split the data into training and testing sets
+Xtrain,Xtest,ytrain,ytest = tts(Xsubset.values, y, test_size=0.5, random_state=146)
+​
+# Plot the training data
+colors = GetColors(len(np.unique(y)))
+PlotGroups(Xtrain, ytrain, colors)
+plt.show()
+​
+### 2. Feature scaling ###
+​
+# Let's take a look at that same data, but this time make sure the axes are both set to the same scale.
+​
+colors = GetColors(len(np.unique(y)))
+PlotGroups(Xtrain, ytrain, colors)
+plt.axis('equal')
+plt.show()
+​
+# It should be clear here, that if we are going to be classifying new data based on their distance from the existing data points, that we would effectively be ignoring the 'mean fractal dimension', as it is effectively contributing nothing to the distance between two points in this data.
+#
+# Let's look at the same data, after standardization:
+​
+from sklearn.preprocessing import StandardScaler as SS
+ss = SS()
+​
+Xtrain_s = ss.fit_transform(Xtrain)
+Xtest_s = ss.transform(Xtest)
+​
+PlotGroups(Xtrain_s, ytrain, colors)
+plt.xlabel('Standardized ' + cols[0])
+plt.ylabel('Standardized ' + cols[1])
+plt.axis('equal')
+plt.show()
+​
+# Much better!  Now, back to the issue of determining an optimal value for $k$.  As mentioned previously, choosing too small of a value can lead to the algorithm being too sensitive to local noise.
+#
+# As an example, consider classifying the black point below:
+​
+PlotGroups(Xtrain_s, ytrain, colors)
+plt.xlabel('Standardized ' + cols[0])
+plt.ylabel('Standardized ' + cols[1])
+plt.axis('equal')
+​
+new_point = np.array([-0.01, 0.35])
+plt.scatter(new_point[0], new_point[1], color='k')
+plt.show()
+​
+knn = KNN(n_neighbors=20)
+knn.fit(Xtrain_s,ytrain)
+knn.predict(new_point.reshape(1,-1))
+​
+# Since the closest point is purple, for $k=1$, we classify the test point as purple.  As $k$ gets larger, the classification reverses.  We might also have a bit of an issue with class imbalance here, which might start to dominate the answer as $k$ gets larger.
+#
+# Here's how to check for class imbalance:
+​
+values, counts = np.unique(ytrain, return_counts = True)
+​
+values
+​
+counts
+​
+# So we have nearly double the number of observations from Group 1 as we do in Group 0.  As discussed previously, we could perhaps undersample from Group 1.  While this is definitely something to consider, let's just go ahead and...
+​
+### 3. Test the model
+​
+# The primary hyperparameter here is $k$, the number of neighbors to consider.  I'm sure you already know how we're going to test this!
+#
+# We will not be using metrics such as $R^2$ or MSE to assess a classification model - those metrics don't make any sense here, since the things we are predicting are labels.  Instead, when you call the .score() method of a classification model, you'll be looking at the overall accuracy of the model (i.e. \% correct).
+#
+# I am not going to do very extensive testing here, as that could be quite time consuming.  I'm only going to check a relatively small number of values for $k$, and only use a small number of folds for our cross validation.  You should experiment a little more with this example, and if this was for a real-world application, expect to spend some number of hours (or more) on testing.
+​
+# Determine an optimal value for the hyperparameter k
+k_range = np.arange(10, 30, 1)
+​
+# Keep track of the percent of correct answer
+train = []
+test = []
+​
+for k in k_range:
+    knn = KNN(n_neighbors=k)
+​
+    tr, te, _, _ = DoKFold(knn, X, y, 10, scaler=SS())
+...
+Collapse
+ This snippet was truncated for display; see it in full
+
+
 ```
