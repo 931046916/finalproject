@@ -1336,9 +1336,5 @@ for k in k_range:
     knn = KNN(n_neighbors=k)
 ​
     tr, te, _, _ = DoKFold(knn, X, y, 10, scaler=SS())
-...
-Collapse
- This snippet was truncated for display; see it in full
-
 
 ```
