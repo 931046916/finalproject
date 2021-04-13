@@ -1337,4 +1337,504 @@ for k in k_range:
 ​
     tr, te, _, _ = DoKFold(knn, X, y, 10, scaler=SS())
 
+
+
+### add DoKFold ###
+
+def DoKFold(model, X, y, k, random_state=146, scaler=None):
+    '''Function will perform K-fold validation and return a list of K training and testing scores, inclduing R^2 as well as MSE.
+
+        Inputs:
+            model: An sklearn model with defined 'fit' and 'score' methods
+            X: An N by p array containing the features of the model.  The N Columns are features, and the p rows are observations.
+            y: An array of length N containing the target of the model
+            k: The number of folds to split the data into for K-fold validation
+            random_state: used when splitting the data into the K folds (default=146)
+            scaler: An sklearn feature scaler.  If none is passed, no feature scaling will be performed
+        Outputs:
+            train_scores: A list of length K containing the training scores
+            test_scores: A list of length K containing the testing scores
+            train_mse: A list of length K containing the MSE on training data
+            test_mse: A list of length K containing the MSE on testing data
+    '''
+
+    from sklearn.model_selection import KFold
+    kf = KFold(n_splits=k, shuffle=True, random_state=random_state)
+
+    train_scores = []
+    test_scores = []
+    train_mse = []
+    test_mse = []
+
+    for idxTrain, idxTest in kf.split(X):
+        Xtrain = X[idxTrain, :]
+        Xtest = X[idxTest, :]
+        ytrain = y[idxTrain]
+        ytest = y[idxTest]
+
+        if scaler != None:
+            Xtrain = scaler.fit_transform(Xtrain)
+            Xtest = scaler.transform(Xtest)
+
+        model.fit(Xtrain, ytrain)
+
+        train_scores.append(model.score(Xtrain, ytrain))
+        test_scores.append(model.score(Xtest, ytest))
+
+        # Compute the mean squared errors
+        ytrain_pred = model.predict(Xtrain)
+        ytest_pred = model.predict(Xtest)
+        train_mse.append(np.mean((ytrain - ytrain_pred) ** 2))
+        test_mse.append(np.mean((ytest - ytest_pred) ** 2))
+
+    return train_scores, test_scores, train_mse, test_mse
+
+### 1. Using decision trees for regression ###
+
+# In this notebook, we'll see how decision trees can be applied to regression problems.  The process is very similar to how they are used for classification, the primary difference being that we will be interested in predicting some continuous-valued target rather than a classification/group.
+#
+# The modifications to the model are based on 1) how predictions are made, and 2) the criteria used when determining how to split a node.
+#
+# When using a decision tree for regression, each node will contain some number of observations, with the targets typically being some sort of continuous variable.  The predicted values are typically the mean value of the target within each of the leaves, although using the median value might also be suitable in some applications.
+#
+# When using decision trees for classification, the criteria used to split a node was based on minimizing the Gini impurity of the resulting nodes.  This would of course not make sense in the context of a regression problem, since we are not predicting labels.  Instead, the criteria used to split a node is typically based on minimizing the MSE of the resulting nodes (although the are other things you might choose to optimize, such as the mean-absolute error, as one example).
+#
+# By default, the decision trees we use here will make their predictions based on the mean value of the target within each leaf of the tree, and the splitting criteria will be based on minimizing the MSE.
+#
+# To get started, I'll make the smallest possible tree for our Boston House Price data.
+
+from sklearn.tree import DecisionTreeRegressor as DTR
+from sklearn import tree
+from sklearn.datasets import load_boston
+import pandas as pd
+
+data = load_boston()
+X = data.data
+X_names = data.feature_names
+y = data.target
+X_df = pd.DataFrame(X,columns=X_names)
+
+dt = DTR(max_depth=1, random_state=146)
+dt.fit(X_df,y)
+tree.plot_tree(dt,feature_names=X_names);
+
+# Here's how to interpret the decision tree above.  Starting at the top (the root):
+#
+# - The root node contains all of the data (samples = 506).
+# - The target in this data is the median house price (in US\\$ thousands), and the average of this value for all 506 samples is 22.533.
+# - If we were to use the value above (22.533) as our prediction, then the mean squared error (MSE) on the data the model was fit to would be 84.42.
+# - Splitting the data into two new nodes, based on the criteria of RM<=6.941, results in the two new nodes you see on the bottom.  If the number of rooms in a house (RM) is less than this value (i.e., if the splitting criteria is True), you go into the bottom left node, otherwise (if the splitting criteria is False), you go to the bottom right node.
+# - The nodes at the bottom are referred to as the **leaves**.  This is where our predictions would come from.  So, if a house has less than 6.941 rooms, we would predict a price of 19.934.  If it has more rooms than that, then we would predict a price of 37.238.
+# - Since I specified "max_depth=1", the algorithm terminates after the first split is performed.
+#
+# If you wanted to translate that model into some code, it might look something like this:
+#
+#         if RM <= 6.941:
+#             predicted_value = 19.934
+#         else:
+#             predicted_value = 37.238
+#
+# and as the tree gets larger, it's basically just a big set of nested conditional statements!
+#
+# The splitting criteria used here is minimizing the weighted average of the mean squared errors of the two new nodes (equivalently, it's minimizing the mean squared error of the model's predictions).  In other words, splitting the data based on any other feature, or any other value of RM would result in two new nodes that have a larger overall MSE than what you see here.
+#
+# We should be able to compute the MSE of the model on the training data in two different ways, and verify that they agree.
+
+mse1 = (40.273*430 + 79.729*76)/(430+76)
+mse1
+
+y_pred = dt.predict(X)
+mse2 = np.mean((y-y_pred)**2)
+mse2
+
+# For smaller problems, it's usually possible to find the best split by scanning through all of the data.  For larger problems, the search might be done randomly.  That is, instead of scanning through all features, a random subset might be selected for each split - the purpose of this is to reduce the computational time required.  **Note:** Even if all features are being considered at each split, the results still may vary between runs.  This is because the features are still being selected in random order, and it is possible that two different splits give the same reduction in MSE.
+#
+# You should definitely consult the documentation, especially regarding settings such as max_features and random_state to ensure you understand what is being done in the background!
+
+### 2.  Decision trees output ###
+
+# Let's visualize the predictions of this model.  Since this tree is currently only using one feature (RM), we can plot that on the horizontal axis, and plot the actual and predicted house prices on the vertical axis.
+
+# Make the plot
+plt.scatter(X_df['RM'], y, color='k', label='Actual')
+plt.scatter(X_df['RM'], y_pred, color='r', label='Predicted')
+plt.title('Decision Tree Regression with max_depth=1')
+plt.xlabel('RM')
+plt.ylabel('Median House Price')
+plt.legend(bbox_to_anchor=[1,0.5],loc='center left')
+plt.show()
+
+# Note that although we said we are doing regression, the goal of which is to predict a continuous output, we are only predicting 2 different values!  In general, a decision tree can only produce, **at most**, $2^d$ distinct values, where $d$ is the maximum depth of the tree.  This is because each additional step in the algorithm can only, at most, double the number of nodes in the tree.  I say "at most" because sometimes there is no way to meaningfully split a node (for example, if the MSE of a node was 0, or if a node contains only a single sample, then there would be no meaningful way to split the node any further).
+#
+# Nonetheless, because decision trees are not based on a particular equation (like a line or a polynomial curve, etc.), they can capture a tremendous amount of complexity.
+#
+# Let's go one step further with this tree, for a max_depth of 2.  This means we will have, at most, $2^2=4$ leaves.
+
+dt = DTR(max_depth=2, random_state=146)
+dt.fit(X_df,y)
+tree.plot_tree(dt,feature_names=X_names);
+
+# At this point, the tree is clearly still picking out the number of rooms as the most important contributor to the price of a house, but it is now also including LSTAT in one of the nodes.
+#
+# To visualize how the model is performing - well, I don't really like 3-d scatter plots - but we can compare the actual and predicted prices:
+
+y_pred = dt.predict(X_df)
+
+# Make the plot
+plt.scatter(y, y_pred)
+# Add a reference line
+plt.plot([min(y),max(y)],[min(y),max(y)], ':k')
+plt.title('Decision Tree Regression with max_depth=2')
+plt.xlabel('Actual Median House Price')
+plt.ylabel('Predicted Median House Price')
+plt.show()
+
+# Let's see how our MSE has changed from the previous model:
+
+mse_depth2 = np.mean((y-y_pred)**2)
+[mse2, mse_depth2]
+
+# You might also check the $R^2$ value in the usual fashion:
+
+dt.score(X_df,y)
+
+# Let's do a quick K-fold validation with the current model:
+
+dt = DTR(max_depth=2)
+k=20
+train_scores,test_scores,train_mse,test_mse = DoKFold(dt,X,y,k)
+[np.mean(train_scores), np.mean(test_scores)]
+
+# Looks a bit overfit.  Let's see what happens if we let the algorithm run without specifying any stopping criteria (that is, nodes will continue to be split until they cannot be split any further):
+
+dt = DTR()
+train_scores,test_scores,train_mse,test_mse= DoKFold(dt,X,y,k)
+[np.mean(train_scores), np.mean(test_scores)]
+
+
+# At this point, you should expect a pretty overfit model.  That's because the tree looks something like this:
+
+dt = DTR()
+dt.fit(X_df,y)
+tree.plot_tree(dt,feature_names=X_names)
+plt.savefig('BostonDTRegFullTree.svg',bbox_inches='tight')
+
+
+# I doubt you'll be able to zoom in close enough to actually read the tree, but all of the leaves at this point are going to have an MSE of 0.  Additionally, they'll probably also contain only a single sample (unless some samples had the exact same target value).
+#
+# Although the model is overfit, let's split the data into training and testing sets, and take a look at the predictions on the test data only.
+
+from sklearn.model_selection import train_test_split as tts
+Xtrain,Xtest,ytrain,ytest = tts(X,y,test_size=0.5,random_state=146)
+
+dt = DTR(random_state=146)
+dt.fit(Xtrain,ytrain)
+y_pred = dt.predict(Xtest)
+
+print(dt.score(Xtest,ytest))
+
+plt.scatter(ytest,y_pred)
+plt.plot([min(ytest),max(ytest)],[min(ytest),max(ytest)], ':k')
+plt.xlabel('Test Data')
+plt.ylabel('Predicted')
+plt.show()
+
+# Although this decision tree is overfit - it is actually doing better on the test data (in this one example) than our previous not-as-overfit linear models (OLS, Ridge, Lasso, which were in the $R^2 \approx 0.7$ range.)
+
+### 3. Tweaking for improved performance ###
+
+# Decision trees have a lot of hyperparameters, all of which control some aspect of how the nodes are split, or when to stop splitting.  Here's a few, along with the names used by sklearn:
+#
+# - The maximum depth (max_depth)
+# - The minimum number of data points a node must contain in order to be split (min_samples_split)
+# - The minimum number of data points each leaf must contain (min_samples_leaf)
+#
+# Getting good performance out of a decision tree will often involve some experimentation with these values, just like we had to do with the regularization methods when finding optimal values for $\alpha$.
+#
+# Let's see if we can narrow in on a good value for max_depth:
+
+max_max_depth = 20
+d_range = np.arange(1,max_max_depth+1)
+
+train = []
+test = []
+train_mse = []
+test_mse = []
+
+for d in d_range:
+    dt = DTR(max_depth=d, random_state=146)
+    tr,te,tr_mse,te_mse = DoKFold(dt,X,y,k)
+    train.append(np.mean(tr))
+    test.append(np.mean(te))
+    train_mse.append(np.mean(tr_mse))
+    test_mse.append(np.mean(te_mse))
+
+idx = np.argmax(test)
+print([d_range[idx], train[idx], test[idx]])
+
+plt.plot(d_range, train, '-xk', label='Train')
+plt.plot(d_range,test, '-xr',label='Test')
+plt.xlabel('Max Depth')
+plt.ylabel('Avg. $R^2$')
+plt.title('K-fold validation with k = ' + str(k))
+plt.show()
+
+idx = np.argmin(test_mse)
+print([d_range[idx], train_mse[idx], test_mse[idx]])
+
+plt.plot(d_range, train_mse, '-xk', label='Train')
+plt.plot(d_range,test_mse, '-xr',label='Test')
+plt.xlabel('Max Depth')
+plt.ylabel('Avg. MSE')
+plt.title('K-fold validation with k = ' + str(k))
+plt.show()
+
+# You can see that the test scores don't just steadily increase or decrease, they tend to fluctuate a bit.  In this case, the general advice is to go with the simpler model.  Even if we got slightly better performance for a larger value, I'd stick with the max depth of 7.  Basically, I'm looking for where the test score is as good as possible, while also being as close as possible the training score.  You might remember this, roughly speaking, as where the curve for the test score starts to "level off".
+#
+# Let's refit the model to the entire data set, take a look at the tree, and plot the actual vs. predicted values.
+
+dt = DTR(max_depth=7, random_state=146)
+dt.fit(X_df,y)
+tree.plot_tree(dt,feature_names=X_names);
+plt.savefig('BostonDTReg_d7.svg',bbox_inches='tight')
+
+y_pred = dt.predict(X_df)
+
+plt.scatter(y,y_pred)
+plt.plot([min(y),max(y)], [min(y), max(y)], ':k')
+plt.xlabel('Actual')
+plt.ylabel('Predicted')
+plt.show()
+
+# Moral of the story here:
+# - The maximum depth was 7, so the model can predict up to $2^7 = 128$ values.  Even though this isn't a continuous range, it certainly looks close in the plot.
+# - The tree itself is hard to interpret.  Although we have what is essentially a flowchart telling us how the predictions are made, it's not the kind of thing you'll be able to keep in your head or make much sense out of (even if we could print it very large and hang it on the wall)
+# - We did end up with what looks like an overfit model... but it's not _too_ bad.
+#
+# ___
+#
+# Now, keep in mind that we only varied one of the model's hyperparameters.  Let's do a grid search now, by varying both the max depth as well as the minimum number of samples required to split a node.  Since the hyperparameters here are integers, doing a grid search won't be quite as bad (slow) as in the previous models where the hyperparameters were continuous.
+
+s_range = np.arange(2,11)
+d_range = np.arange(2,11)
+
+best_test_score = -np.inf
+for s in s_range:
+    for d in d_range:
+        dt = DTR(max_depth=d,min_samples_split=s,random_state=146)
+        tr,te,_,_ = DoKFold(dt,X,y,k)
+        if np.mean(te)>best_test_score:
+            best_test_score = np.mean(te)
+            best_s = s
+            best_d = d
+[best_test_score, best_s, best_d]
+
+# Notice how the best depth here is not the same as before.  In this case, using a max_depth=5 and min_samples_split=4 gave us slightly better results.
+#
+# OK! Next, let's do one additional training / testing split with these settings, and compare the results on the test data.
+
+Xtrain,Xtest,ytrain,ytest = tts(X,y,test_size=0.5, random_state=146)
+dt = DTR(max_depth = 5, min_samples_split = 4, random_state=146)
+
+dt.fit(Xtrain,ytrain)
+y_pred = dt.predict(Xtest)
+
+plt.scatter(ytest,y_pred)
+plt.plot([min(ytest), max(ytest)], [min(ytest), max(ytest)], ':k')
+plt.xlabel('Test Data')
+plt.ylabel('Predicted')
+plt.show()
+[dt.score(Xtrain,ytrain), dt.score(Xtest,ytest)]
+
+# Finally, let's compare training and testing scores for an entire K-fold validation, using these same settings:
+
+tr,te,_,_ = DoKFold(dt,X,y,k)
+
+plt.scatter(tr,te,alpha=0.5,ec='k')
+plt.xlabel('Training ($R^2$)')
+plt.ylabel('Testing ($R^2$)')
+plt.axis('equal')
+plt.show()
+
+# Overfit, yes - but we are still achieving a higher external validity (on the test data) than the linear models!  All in all, I think that this is not a very bad model for this data (and we may be able to improve it a bit further...)
+
+### 4. Random Forest ###
+
+# At this point, we probably don't need much of an introduction.  This is going to be very similar to random forest classification, where we will build many trees (each based on a bootstrapped version of the original data), and the predictions made by the model will be the average of the individual predictions made by each tree in the forest.
+
+from sklearn.ensemble import RandomForestRegressor as RFR
+
+n_trees = 10
+rfr = RFR(random_state=146, n_estimators=n_trees)
+
+rfr.fit(X,y)
+rfr.score(X,y)
+
+# We can take a look at the individual trees in the forest:
+
+# Pick a tree, any tree!
+idx = np.random.choice(n_trees)
+t = rfr.estimators_[idx]
+tree.plot_tree(t,feature_names=X_names);
+
+# That tree looks like one of those "probably overfit" trees!
+#
+# Let's do some cross-validation though and see how the entire forest performs.
+
+k=5
+train,test,train_mse,test_mse = DoKFold(rfr,X,y,k)
+
+[np.mean(train), np.mean(test)]
+
+
+[np.mean(train_mse), np.mean(test_mse)]
+
+
+# It is a bit overfit, but not too bad for our first try, using nothing but default settings.
+#
+# What happens if we add more trees?
+
+n_trees = 100
+rfr = RFR(random_state=146,n_estimators=n_trees)
+train,test,train_mse,test_mse = DoKFold(rfr,X,y,k)
+
+[np.mean(train), np.mean(test)]
+
+
+[np.mean(train_mse), np.mean(test_mse)]
+
+# And, of course, we could do a more methodical search:
+
+n_trees_range = [10, 100, 500, 1000]
+
+train = []
+test = []
+train_mse = []
+test_mse = []
+for n_trees in n_trees_range:
+    rfr = RFR(random_state=146, n_estimators=n_trees)
+    tr, te, tr_mse, te_mse = DoKFold(rfr, X, y, k)
+
+    train.append(np.mean(tr))
+    test.append(np.mean(te))
+    train_mse.append(np.mean(tr_mse))
+    test_mse.append(np.mean(te_mse))
+
+#plt.plot(n_trees_range, train, '-xk', label='Train')
+plt.plot(n_trees_range, test, '-xr', label='Test')
+plt.xlabel('# of trees')
+plt.ylabel('$R^2$')
+plt.legend()
+plt.show()
+
+#plt.plot(n_trees_range, train_mse, '-xk', label='Train')
+plt.plot(n_trees_range, test_mse, '-xr', label='Test')
+plt.xlabel('# of trees')
+plt.ylabel('MSE')
+plt.legend()
+plt.show()
+
+# What if, instead of letting the trees all be fully expanded, we use the "best" values we found before for the individual decision tree?
+#
+# Those were, max_depth = 5, and min_samples_split=4
+
+rfr = RFR(n_estimators=100, max_depth=5, min_samples_split=4,random_state=146)
+train,test,train_mse,test_mse = DoKFold(rfr,X,y,k)
+
+print([np.mean(train), np.mean(test)])
+print([np.mean(train_mse), np.mean(test_mse)])
+
+
+# And - while our performance has gotten a bit worse on both training and testing data, the model also looks a little less overfit than the 100 tree model with no additional stopping criteria.
+#
+# Of course, you would probably want to do a more systematic search, but this will take quite a bit longer. This time we will keep track of all of the results, not just the best ones.  This is a good thing to do, especially if the code might take awhile to run, so that you don't have to go back and recompute anything later.
+#
+# Additionally, we'll also keep track of how long this takes.  It's often a good idea to run smaller, quicker tests first, so you can estimate how long the "final version" might take to run.
+
+from datetime import datetime as dt
+tStart = dt.now()
+z = 0
+for i in range(1000):
+    z+=1
+print(dt.now()-tStart)
+
+rng_trees = [10,100,200]
+rng_depth = np.arange(2,11)
+rng_samples = np.arange(2,11)
+k = 5
+
+results = []
+
+# Keep track of how long this takes
+tStart = dt.now()
+for t in rng_trees:
+    for d in rng_depth:
+        for s in rng_samples:
+            settings = [t,d,s]
+            print(settings)
+            rfr = RFR(random_state=146, n_estimators=t, max_depth = d, min_samples_split=s)
+            tr,te,tr_mse,te_mse = DoKFold(rfr,X,y,k)
+            results.append([*settings,tr,te,tr_mse,te_mse])
+print(dt.now()-tStart)
+
+
+# Next up, let's go find the settings that gave us the best results.  Have a look at one row of our results first:
+
+results[0]
+
+
+# Suppose we're looking for the settings that gave us the lowest average MSE on the test data.  We can determine this in just a few lines:
+
+# The test MSEs are element 6 of each row
+mean_test_mse = [np.mean(r[6]) for r in results]
+
+mean_test_mse[0]
+
+# Verify for one (or more) row of results
+#results[0]
+#results[0][6]
+np.mean(results[0][6])
+
+# Get the smallest value(s)
+min_test_mse = min(mean_test_mse)
+min_test_mse
+
+idx = np.where(mean_test_mse == min_test_mse)
+idx
+
+best_results = results[idx[0][0]]
+best_results
+
+# Well, if you go back and compare with our previous tests, it looks like the model with 10 trees and no additional stopping criteria was still the best, at least in terms of minimum average MSE on the test data.  At least at this point we could feel a little more confident about that!
+#
+# Last but not least, let's visualize what the model is predicting vs. the actual values.
+#
+# To do this, I will fit one additional model using our "best" settings on a single training/testing split of the data.
+#
+# We'll also step up our plotting game a bit. For this example, I'll put two plots side by side, one for the testing data, and the other for the training data.
+
+from sklearn.model_selection import train_test_split as tts
+Xtrain,Xtest,ytrain,ytest = tts(X,y,test_size=0.5, random_state=146)
+
+rfr = RFR(n_estimators=100, random_state=146)
+rfr.fit(Xtrain,ytrain)
+y_pred = rfr.predict(Xtest)
+y_train_pred = rfr.predict(Xtrain)
+
+fig,(ax1,ax2) = plt.subplots(1,2,figsize=(10,5),sharey=True)
+ax1.scatter(ytest,y_pred,alpha=0.5,ec='k')
+ax1.plot([min(ytest),max(ytest)], [min(ytest),max(ytest)], ':k')
+ax1.set_xlabel('Test Data')
+ax1.set_ylabel('Predicted')
+
+ax2.scatter(ytrain,y_train_pred,alpha=0.5,ec='k')
+ax2.plot([min(ytest),max(ytest)], [min(ytest),max(ytest)], ':k')
+ax2.set_xlabel('Training Data')
+# Really no need for the redundant label on the y axis
+#ax2.set_ylabel('Predicted')
+
+plt.show()
+
+# Comparing the two plots here also gives you a visual sense of how the model is a bit overfit!
+
 ```
