@@ -1337,8 +1337,370 @@ for k in k_range:
 ​
     tr, te, _, _ = DoKFold(knn, X, y, 10, scaler=SS())
 
+2021/04/12
+​
+### add DoKFold ###
+​
+def DoKFold(model ,X ,y ,k ,random_state=146 ,scaler=None):
+    ''' Function will perform K-fold validation and return a list of K training and testing scores, inclduing R^2 as well as MSE.
+​
+        Inputs:
+            model: An sklearn model with defined 'fit' and 'score' methods
+            X: An N by p array containing the features of the model.  The N rows are observations, and the p columns are features.
+            y: An array of length N containing the target of the model
+            k: The number of folds to split the data into for K-fold validation
+            random_state: used when splitting the data into the K folds (default=146)
+            scaler: An sklearn feature scaler.  If none is passed, no feature scaling will be performed
+        Outputs:
+            train_scores: A list of length K containing the training scores
+            test_scores: A list of length K containing the testing scores
+            train_mse: A list of length K containing the MSE on training data
+            test_mse: A list of length K containing the MSE on testing data
+    '''
+​
+    from sklearn.model_selection import KFold
+    kf = KFold(n_splits=k ,shuffle=True ,random_state=random_state)
+​
+    train_scores =[]
+    test_scores =[]
+    train_mse =[]
+    test_mse =[]
+​
+    for idxTrain, idxTest in kf.split(X):
+        Xtrain = X[idxTrain ,:]
+        Xtest = X[idxTest ,:]
+        ytrain = y[idxTrain]
+        ytest = y[idxTest]
+​
+        if scaler != None:
+            Xtrain = scaler.fit_transform(Xtrain)
+            Xtest = scaler.transform(Xtest)
+​
+        model.fit(Xtrain ,ytrain)
+​
+        train_scores.append(model.score(Xtrain ,ytrain))
+        test_scores.append(model.score(Xtest ,ytest))
+​
+        # Compute the mean squared errors
+        ytrain_pred = model.predict(Xtrain)
+        ytest_pred = model.predict(Xtest)
+        train_mse.append(np.mean((ytrain -ytrain_pred )**2))
+        test_mse.append(np.mean((ytest -ytest_pred )**2))
+​
+    return train_scores ,test_scores ,train_mse ,test_mse
+​
+def CompareClasses(actual, predicted, names=None):
+    '''Function returns a confusion matrix, and overall accuracy given:
+            Input:  actual - a list of actual classifications
+                    predicted - a list of predicted classifications
+                    names (optional) - a list of class names
+    '''
+    import pandas as pd
+    accuracy = sum(actual == predicted) /actual.shape[0]
+    classes = pd.DataFrame(columns=['Actual' ,'Predicted'])
+    classes['Actual'] = actual
+    classes['Predicted'] = predicted
+    conf_mat = pd.crosstab(classes['Predicted'] ,classes['Actual'])
+    # Relabel the rows/columns if names was provided
+    if type(names) != type(None):
+        conf_mat.index =y_names
+        conf_mat.index.name ='Predicted'
+        conf_mat.columns =y_names
+        conf_mat.columns.name = 'Actual'
+    print('Accuracy = ' + format(accuracy, '.2f'))
+    return conf_mat, accuracy
+​
+### 1.  Intro to Logistic Regression ###
+​
+# Logistic regression is useful a method for classification.  It is called a regression because the model performs a linear regression in the background, however the final output of the model is transformed by something called a **logistic (or sigmoid) function** which transforms the existing range of values to a new distribution with a minimum value of 0 and maximum value of 1. A typical example of a sigmoid function looks like:
+​
+import numpy as np
+import matplotlib.pyplot as plt
+plt.figure(figsize=(12,6))
+x = np.linspace(-10,10,1000)
+y = 1/(1+np.exp(-x))
+plt.plot(x,y)
+plt.xlabel('$x$')
+plt.ylabel('$y$')
+plt.show()
+​
+# These values are meant to be interpreted as the probabilities of membership in a particular group.  For example, if determining whether a data point belongs to Group 0 or Group 1, a logistic regression that predicts a value of $y=0.7$ is interpreted as a 70\% chance that the data point belongs to Group 1 (or, equivalently, as a 30\% chance that the data point belongs to Group 0).
+#
+# Logistic Regression can also be applied to problems involving more than 2 classifications.  In this case, the model will output probabilities of membership in each particular group, such that the sum of these probabilities will always equal 1 (that is, there is a 100\% chance that the data belongs to one of the groups).  For example, a Logistic Regression might predict a 20\% probability for Group A, 45\% probability for Group B, and a 35\% probability for Group C (where it should be noted that 0.20 + 0.45 + 0.35 = 1).
+#
+# These probabilities are referred to as **soft classifications**.  They are "soft" in the sense that we are not assigning a yes/no answer for whether the data point belongs to a particular group.  You might take the largest probability, using the numbers above for example, and predict that the data point belongs to Group B.  This is referred to as a **hard classification**.  Although we are often interested in the hard classifications, examining the soft classifications can also yield some insight into how "certain" the model is about its prediction.
+#
+# We'll start by looking at Logistic Regression applied to a problem with only 2 classes, and with only one independent variable.
+​
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+​
+from sklearn.datasets import load_breast_cancer as lbc
+from sklearn.linear_model import LogisticRegression
+​
+bc = lbc()
+X = bc.data
+X_names = bc.feature_names
+y = bc.target
+y_names = bc.target_names
+​
+Xdf = pd.DataFrame(X, columns=X_names)
+​
+# I'll select just one of the features for now.  To do so, I'll simply pick the variable that has the largest (in absolute value) correlation with the target.  I'm not suggesting that this is a good way to go about building a model, but we want to be able to visualize a simple case first before we move on to more complicated cases.
+​
+Xdf['y'] = y
+​
+Xdf.corr().loc['y'].sort_values()
+​
+col = 'worst concave points'
+X1 = Xdf[col]
+plt.scatter(X1,y,alpha=0.5,ec='k')
+plt.xlabel(col)
+plt.yticks([0,1], [ y_names[i] + ' (y= ' + str(i) +')' for i in [0,1]])
+plt.show()
+​
+# First of all, it stands to reason, just by looking at the picture, that we should be able to build a somewhat decent model here.  First, we will fit our Logistic Regression to the entire data set, and visualize the probabilities that it predicts.
+​
+log_reg = LogisticRegression()
+log_reg.fit(X1.values.reshape(-1,1), y)
+y_pred_proba = log_reg.predict_proba(X1.values.reshape(-1,1))
+​
+y_pred_proba
+​
+# The first column above represents the probability of membership in Group 0 (malignant), and the second column represents the probability of membership in Group 1 (benign).  The way our data is currently setup, we'll want to plot the probabilities of being benign, since in our data, $y=1$ represents the class "benign".
+#
+# To visualize the curve, I'll generate a list of values between the min and max of our current feature:
+​
+x_range = np.linspace(min(X1), max(X1), 100)
+y_pred_proba = log_reg.predict_proba(x_range.reshape(-1,1))
+​
+plt.scatter(X1,y,alpha=0.5,ec='k')
+plt.plot(x_range,y_pred_proba[:,1], '-r')
+plt.plot([min(X1), max(X1)], [0.5, 0.5], ':r')
+plt.xlabel(col)
+plt.yticks([0,1], [ y_names[i] + ' (y= ' + str(i) +')' for i in [0,1]])
+plt.show()
+​
+# Next, we can convert these soft classifications into hard classifications.  For a 2 class problem, this corresponds to simply placing a threshold at $y=0.5$.  Anything above this line would be classified as Group 1, and anything below it as Group 0.
+#
+# There's at least two ways we can do this:
+​
+y_hard = log_reg.predict(x_range.reshape(-1,1))
+y_hard
+​
+# This should be identical to what we would get if we picked the group with the highest probability:
+​
+y_hard2 = np.argmax(y_pred_proba, axis=1)
+y_hard2
+​
+# Now that we understand what we are predicting, let's fit the model using all of our features and see how well it does!
+#
+# Note that, by default, the Logistic Regression will perform an L2 regularization (similar to the Ridge regression), therefore we should standardize our features.  Additionally, standardizing is going to speed up the convergence of the solution (if you don't believe me, try running it without the standardization).
+​
+from sklearn.preprocessing import StandardScaler as SS
+log_reg = LogisticRegression()
+k=20
+tr,te,_,_ = DoKFold(log_reg,X,y,k,scaler=SS())
+​
+[np.mean(tr), np.mean(te)]
+​
+plt.scatter(tr,te,alpha=0.5,ec='k')
+plt.xlabel('Training Accuracy')
+plt.ylabel('Testing Accuracy')
+plt.xlim([0,1.1])
+plt.ylim([0,1.1])
+plt.show()
+​
+# Let's look at a confusion matrix for a single train/test split:
+from sklearn.model_selection import train_test_split as tts
+​
+# Create the training/testing split
+Xtrain,Xtest,ytrain,ytest = tts(X,y,test_size=0.4, random_state=146)
+​
+# Standardize the data
+ss = SS()
+Xtrain = ss.fit_transform(Xtrain)
+Xtest = ss.transform(Xtest)
+​
+# Fit the model
+log_reg.fit(Xtrain,ytrain)
+​
+# Predict y for the test set
+y_pred = log_reg.predict(Xtest)
+​
+# Look at the confusion matrix
+CompareClasses(ytest,y_pred,y_names)
+​
+### 2.  Logistic regression with a multiple class problem ###
+​
+# Next, we'll take a look at the iris dataset (https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_iris.html)
+#
+# The goal is to predict one of three types of iris species (setosa, virginica, veritosa), based on 4 physical measurements of the sepals and petals of the plant.
+​
+from sklearn.datasets import load_iris
+iris = load_iris()
+​
+X = iris.data
+X_names = iris.feature_names
+y = iris.target
+y_names = iris.target_names
+​
+Xdf = pd.DataFrame(X, columns=X_names)
+​
+Xdf.head(3)
+​
+# Perform a K-fold validation:
+​
+log_reg = LogisticRegression()
+k = 20
+tr,te,_,_ = DoKFold(log_reg,X,y,k,scaler=SS())
+[np.mean(tr), np.mean(te)]
+​
+plt.scatter(tr,te,alpha=0.5,ec='k')
+plt.xlabel('Training Accuracy')
+plt.ylabel('Testing Accuracy')
+plt.xlim([0,1.1])
+plt.ylim([0,1.1])
+plt.show()
+​
+# Look at a confusion matrix for single train/test split:
+​
+# Create the training/testing split
+Xtrain,Xtest,ytrain,ytest = tts(X,y,test_size=0.4, random_state=149)
+​
+# Standardize the data
+ss = SS()
+Xtrain = ss.fit_transform(Xtrain)
+Xtest = ss.transform(Xtest)
+​
+# Fit the model
+log_reg.fit(Xtrain,ytrain)
+​
+# Predict y for the test set
+y_pred = log_reg.predict(Xtest)
+y_pred_proba = log_reg.predict_proba(Xtest)
+​
+# Look at the confusion matrix
+CompareClasses(ytest,y_pred,y_names)
+​
+y_pred_proba
+​
+### Part 3.  Logistic regression application with images of handwritten digits ###
+​
+# Here's a fun one - we'll use logistic regression to classify some handwritten digits (we'll see this data again when we discuss the Multilayer Perceptron).
+#
+# The data consists of very low resolution image data, 8x8 = 64 pixels, with each pixel represented on 0 to 16 scale representing their grayscale intensity.  The target is, of course, one of the digits 0 through 9.
+#
+# https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_digits.html
+​
+from sklearn.datasets import load_digits
+dig = load_digits()
+X = dig.data
+# There are no feature names here
+y = dig.target
+# There are no target names
+# But there are also "images"
+img = dig.images
+​
+# Display a random image
+idx = np.random.choice(len(img))
+plt.figure(figsize=(4,4))
+plt.imshow(img[idx], cmap='gray')
+plt.title('This is supposed to be a ' + str(y[idx]))
+plt.show()
+​
+# Let's do a K-fold validation.  Due to the nature of the data (pixel intensities between 0 and 16), I'm not sure if I want to standardize or not, so I'll just try it both ways.
+​
+log_reg = LogisticRegression()
+k=5
+tr,te,_,_ = DoKFold(log_reg,X,y,k)
+​
+# Watch out for convergence warnings!  This is the algorithm telling you it doesn't think it's done yet!
+#
+# For many problems it is not possible to explicitly find a solution, e.g. by solving an equation.  Instead, **numerical approaches** are often taken which amounts to the computer making succesively (hopefully) closer approximations to the solution (a simple example of a numerical method is Newton's method: https://en.wikipedia.org/wiki/Newton%27s_method).  It is entirely possible in some cases that, if permitted, the computer would continue to run indefinitely, i.e. an infinite loop.  Because of this, many numerical methods have an upper limit on how many iterations they are allowed to run before terminating.
+#
+# When you see a convergence warning, the first thing you might try is to increase this limit a bit (in sklearn, it is usually called 'max_iter').
+​
+log_reg = LogisticRegression(max_iter=5000)
+k=5
+tr,te,_,_ = DoKFold(log_reg,X,y,k)
+​
+[np.mean(tr), np.mean(te)]
+​
+plt.scatter(tr,te,alpha=0.5,ec='k')
+plt.xlabel('Training Accuracy')
+plt.ylabel('Testing Accuracy')
+plt.xlim([0,1.1])
+plt.ylim([0,1.1])
+plt.show()
+​
+# Look at a confusion matrix on a single train/test split:
+​
+# Create the training/testing split
+Xtrain,Xtest,ytrain,ytest = tts(X,y,test_size=0.4, random_state=149)
+​
+# Fit the model
+log_reg.fit(Xtrain,ytrain)
+​
+# Predict y for the test set
+y_pred = log_reg.predict(Xtest)
+y_pred_proba = log_reg.predict_proba(Xtest)
+​
+# Look at the confusion matrix
+CompareClasses(ytest,y_pred)
+​
+# Repeat the above, but this time standardize the data
+log_reg = LogisticRegression(max_iter=5000)
+k=5
+tr,te,_,_ = DoKFold(log_reg,X,y,k,scaler=SS())
+[np.mean(tr), np.mean(te)]
+​
+# Create the training/testing split
+Xtrain,Xtest,ytrain,ytest,itrain,itest = tts(X,y,img,test_size=0.4, random_state=146)
+​
+# Standardize the data
+ss = SS()
+Xtrain = ss.fit_transform(Xtrain)
+Xtest = ss.transform(Xtest)
+​
+# Fit the model
+log_reg.fit(Xtrain,ytrain)
+​
+# Predict y for the test set
+y_pred = log_reg.predict(Xtest)
+y_pred_proba = log_reg.predict_proba(Xtest)
+​
+# Look at the confusion matrix
+CompareClasses(ytest,y_pred)
+​
+# One interesting thing to note here - the Logistic Regression has no idea about the spatial orientation of the pixels.  As far as the model is concerned, it's just a list of 64 numbers without any inherent ordering! (The images are already centered though, so that's certainly important).
+#
+# Let's take a look at some of the ones it got wrong.  We'll get a list of all the incorrect classifications and then select one at random to look at:
+​
+idxWrong = np.where(ytest != y_pred)
+idxWrong[0]
+​
+#idx = np.random.choice(idxWrong[0])
+idx = 210
+plt.figure(figsize=(4,4))
+plt.imshow(itest[idx], cmap='gray')
+plt.title('This is supposed to be a ' + str(ytest[idx]) + '\nIt was classified as a ' + str(y_pred[idx]))
+plt.show()
+​
+# Let's take a peek at the soft classifications:
+​
+plt.figure(figsize=(12,6))
+plt.bar(range(10), y_pred_proba[idx])
+plt.xlabel('Digit')
+plt.ylabel('Predicted Probability')
+plt.xticks(range(10))
+plt.show()
+​
+Collapse
 
 
+2021/04/14
 ### add DoKFold ###
 
 def DoKFold(model, X, y, k, random_state=146, scaler=None):
