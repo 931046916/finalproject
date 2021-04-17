@@ -10,13 +10,13 @@ X = pns.drop(['wealthC','wealthI'],axis = 1)
 y = pns.wealthC
 ```
 ### WealthC
-Linear Regression MSE: 0.44281  
+Linear Regression MSE: 0.44281   
 Linear Regression Standardized MSE: 0.44297  
-Linear Regression training R^2: 0.73583   
-Linear Regression testing R^2: 0.73505
+Linear Regression training R^2: 0.73583    
+Linear Regression testing R^2: 0.73505  
 Linear Regression standardized training R^2: 0.73581   
 Linear Regression Standardized testing R^2: 0.73504 
-Comparison of coefficient: the values before and after standardization is quite similar, but the scores after standardization is slightly smaller than those before standardization.  
+Comparison of coefficient: the values before and after standardization is quite similar, but the scores after standardization is slightly smaller than those before standardization.    
 Ridge Regression: alpha value: 75.5 ; training score: 0.73584 ; testing score: 0.73522   
 Lasso Regression: alpha value: 0.00026 ; training score: 0.73583 ; testing score: 0.73506   
 
