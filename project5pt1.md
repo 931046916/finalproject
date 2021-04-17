@@ -1,9 +1,24 @@
+### Set up
+```
+pns = pd.read_csv('persons.csv')
+check_nan = pns['age'].isnull().values.any()
+pns.dropna(inplace=True)
+display(pns.dtypes)
+pns['age'] = pns['age'].astype(int)
+pns['edu'] = pns['edu'].astype(int)
+X = pns.drop(['wealthC','wealthI'],axis = 1)
+y = pns.wealthC
+```
 ### WealthC
-Linear Regression MSE: 0.4428100  
-Linear Regression Standardized MSE: 0.4428117  
-Comparison of coefficient:  
-Ridge Regression: alpha value: 76.0; training score: 0.7358363174051512; testing score: 0.7350544860652567  
-Lasso Regression: alpha value: 0.00026333333333333336; training score: 0.7358346356402806; testing score: 0.7350562589633233  
+Linear Regression MSE: 0.44281  
+Linear Regression Standardized MSE: 0.44297  
+Linear Regression training R^2: 0.73583   
+Linear Regression testing R^2: 0.73505
+Linear Regression standardized training R^2: 0.73581   
+Linear Regression Standardized testing R^2: 0.73504 
+Comparison of coefficient: the values before and after standardization is quite similar, but the scores after standardization is slightly smaller than those before standardization.  
+Ridge Regression: alpha value: 68 ; training score: 0.73584 ; testing score: 0.73518   
+Lasso Regression: alpha value: 0.00026 ; training score: 0.73583 ; testing score: 0.73506   
 
 ### WealthI
 Linear Regression MSE  
