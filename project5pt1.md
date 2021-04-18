@@ -21,10 +21,14 @@ Ridge Regression: alpha value: 75.5 ; training score: 0.73584 ; testing score: 0
 Lasso Regression: alpha value: 0.00026 ; training score: 0.73583 ; testing score: 0.73506   
 
 ### WealthI
-Linear Regression MSE  
-Linear Regression Standardized MSE  
-Comparison of coefficient:  
-Ridge Regression  
-Lasso Regression  
+Linear Regression MSE: 1750276834.9304745   
+Linear Regression Standardized MSE: 1750287416.4378276  
+Linear Regression training R^2: 0.82584    
+Linear Regression testing R^2: 0.82502  
+Linear Regression standardized training R^2: 0.82582     
+Linear Regression Standardized testing R^2: 0.82501     
+Comparison of coefficient: the values before and after standardization is quite similar, but the scores after standardization is slightly smaller than those before standardization.    
+Ridge Regression: alpha value: 75.5 ; training score: 0.82583 ; testing score: 0.82502   
+Lasso Regression: alpha value:  ; training score:  ; testing score:   
 
 ### Which of the models produced the best results in predicting wealth of all persons throughout the smaller West African country being described? 
