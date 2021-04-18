@@ -27,8 +27,8 @@ Linear Regression training R^2: 0.82584
 Linear Regression testing R^2: 0.82502  
 Linear Regression standardized training R^2: 0.82582     
 Linear Regression Standardized testing R^2: 0.82501     
-Comparison of coefficient: the values before and after standardization is quite similar, but the scores after standardization is slightly smaller than those before standardization.    
-Ridge Regression: alpha value: 75.5 ; training score: 0.82583 ; testing score: 0.82502   
+Comparison of coefficient: just like the feature WealthC, the values before and after standardization is nearly the same, but the scores after standardization is slightly smaller than those before standardization.    
+Ridge Regression: alpha value: 93.6 ; training score: 0.82583 ; testing score: 0.82502   
 Lasso Regression: alpha value:  ; training score:  ; testing score:   
 
 ### Which of the models produced the best results in predicting wealth of all persons throughout the smaller West African country being described? 
