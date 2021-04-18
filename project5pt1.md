@@ -72,5 +72,5 @@ Lasso Regression (alpha value range 1.0 to 2.0): training score: 0.82583 ; testi
 Evaluation:  
 Again, the training and testing scores for all these three regressionb models are very similar, so the performance is still not improved.
 
-##### Which of the models produced the best results in predicting wealth of all persons throughout the smaller West African country being described? 
+#### Which of the models produced the best results in predicting wealth of all persons throughout the smaller West African country being described? 
 All the values from the three models for target "WealthC" is higher than the values for target "WealthI", which indicates that "WealthI" fit the modles better and has higher predictability, but "WealthI" has weirdly large MSE before and after standardization. As for linear regression, ridge regression, and lasso regression for "WealthC", ridge regression produces best result, although all other values are almost the same. However, for both "WealthC" and "WealthI", my codes produce strange plots. For ridge regression, they produce a linear graph and for lasso regression, after showing a bunch of convergence errors, the plot is also far from what it should be look like and I don't really know what's wrong with my codes. 
