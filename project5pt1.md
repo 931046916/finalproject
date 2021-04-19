@@ -54,7 +54,7 @@ Linear Regression standardized training R^2: 0.73581
 Linear Regression Standardized testing R^2: 0.73504  
 Comparison of coefficient:  
 the linear regression coefficient changes a lot, but the values for MSE and R^2 do not vary much before and after standardization, but the scores after standardization is slightly smaller than those before standardization.    
-Ridge Regression (alpha value range 60 to 80): training score: 0.73584 ; testing score: 0.73522   
+Ridge Regression (alpha value range 65 to 75): optimal alpha value: 72.89473 ; training score: 0.73583 ; testing score: 0.73521   
 Lasso Regression (alpha value range 0.0001 to 0.0003): training score: 0.73583 ; testing score: 0.73506   
 Evaluation:  
 We can see from the extremely similar training and testing scores that changing the model does not significantly inprove performance.
@@ -103,14 +103,15 @@ Linear Regression testing R^2: 0.82501
 Linear Regression standardized training R^2: 0.82582     
 Linear Regression Standardized testing R^2: 0.82501     
 Comparison of coefficient: just like the feature WealthC, the values before and after standardization is nearly the same, but the scores after standardization is slightly smaller than those before standardization.    
-Ridge Regression (alpha value range 90 to 95): training score: 0.82584 ; testing score: 0.82502   
+Ridge Regression (alpha value range 92 to 94): optimal alpha value: 93.26315 ; training score: 0.82584 ; testing score: 0.82533      
 Lasso Regression (alpha value range 1.0 to 2.0): training score: 0.82583 ; testing score: 0.82502  
 Evaluation:  
 Again, the training and testing scores for all these three regressionb models are very similar, so the performance is still not improved.
 
 ### Which of the models produced the best results in predicting wealth of all persons throughout the smaller West African country being described? 
-All the values from the three models for target "WealthC" is higher than the values for target "WealthI", which indicates that "WealthI" fit the modles better and has higher predictability, so "WealthI“ is more correlated with the features. But "WealthI" has weirdly large MSE before and after standardization, which suggest that the MSE value for "WealthI" in linear regression model is not usable. As for linear regression, ridge regression, and lasso regression for "WealthC", ridge regression produces best result, although all other values are almost the same. However, for both "WealthC" and "WealthI", my codes produce strange plots. For ridge regression, they produce a graph that resembles a linear relationship and for lasso regression, after showing a bunch of convergence errors, the plot is also far from what it should be look like and I don't really know what's wrong with my codes. I've attached my graph anyway to illustrate my problem, but from the statistical values, we can still see that using "WealthI" produces better outcomes.
+All the values from the three models for target "WealthC" is higher than the values for target "WealthI", which indicates that "WealthI" fit the modles better and has higher predictability, so "WealthI“ is more correlated with the features. But "WealthI" has weirdly large MSE before and after standardization, which suggest that the MSE value for "WealthI" in linear regression model is not usable. As for linear regression, ridge regression, and lasso regression for "WealthC", ridge regression produces results with largest value, although all other values are almost the same, so ridge regression model for WealthI should be considered as the best model. 
 #### Ridge for WealthC
-![Figure_1](https://user-images.githubusercontent.com/78099480/115155070-c7b2bc80-a0b0-11eb-92cd-bdf08075c3e3.png)
+![ridgeI](https://user-images.githubusercontent.com/78099480/115266739-0a38cf80-a16b-11eb-84b5-09e34070bce7.png)
 #### Ridge for WealthI
-![Figure_2](https://user-images.githubusercontent.com/78099480/115155079-d305e800-a0b0-11eb-843a-5d1b4ad17b65.png)
+![ridgeI](https://user-images.githubusercontent.com/78099480/115266009-60594300-a16a-11eb-9b0c-95020062c81c.png)
+
