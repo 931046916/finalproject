@@ -103,7 +103,7 @@ Linear Regression testing R^2: 0.82501
 Linear Regression standardized training R^2: 0.82582     
 Linear Regression Standardized testing R^2: 0.82501     
 Comparison of coefficient: just like the feature WealthC, the values before and after standardization is nearly the same, but the scores after standardization is slightly smaller than those before standardization.    
-Ridge Regression (alpha value range 90 to 100): training score: 0.82584 ; testing score: 0.82502   
+Ridge Regression (alpha value range 90 to 95): training score: 0.82584 ; testing score: 0.82502   
 Lasso Regression (alpha value range 1.0 to 2.0): training score: 0.82583 ; testing score: 0.82502  
 Evaluation:  
 Again, the training and testing scores for all these three regressionb models are very similar, so the performance is still not improved.
