@@ -44,5 +44,5 @@ After Standardization:
 1000 trees:[training: 0.7958984375, testing: 0.4958516349438751]    
 5000 trees:[training: 0.7958984375, testing: 0.5031722791605662]    
 For all these models, although all the values do not change very much, KNN with distance weight is the model that improves the most. The distance metrics would improve the accuracy of this algorithm and when merging wealth classes 2 and 3, there are less variance in feature, so fewer neighbors would lead to closer neighbors. 
-### Results
+### 6. Results
 For the models before and after putting wealth classes 2 and 3 into a single outcome, logistic regression always produces the highest testing scores, so logistic regression model has the best performance which is also neither quite overfitting nor quite underfitting. The testing score of the logistic regression model for putting wealth classes 2 and 3 into a single outcome is slightly larger than the one that considers them seperately, so it performs slightly better than the latter one. Overall, all the models produce very close testing scores so their performances are also quite similar.
