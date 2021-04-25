@@ -32,3 +32,17 @@ Standardized data:
 1000 trees: [training: 0.7952473958333334, testing: 0.49536359199609564]   
 5000 trees: [training: 0.7952473958333334, testing: 0.4968277208394339]    
 ### 5. Repeat the previous steps after recoding the wealth classes 2 and 3 into a single outcome
+After changing class 2 and class 3 into a single outcome, the KNN model doesn't change much. The optimal k value changes to 69 and the testing score turns into 0.552464616886286. After adding distance weight, the testing score changes to 0.5065885797950219, which shows that the model improved a little. For logistic regression, the training score becomes 0.5537109375, and the testing score becomes 0.5436798438262567, which also remains roughly the same. For random forest before standardization, all the training scores remains roughly the same but all the testing scores increased a little (as presented below). For random forest after standardization, the training scores also remains roughly the same and all the testing scores increased a little.   
+Before Standardization:   
+100 trees:[training: 0.7906901041666666, testing: 0.5061005368472425]   
+500 trees:[training: 0.7906901041666666, testing: 0.5085407515861395]   
+1000 trees:[training: 0.7906901041666666, testing: 0.5095168374816984]    
+5000 trees:[training: 0.7906901041666666, testing: 0.5070766227428014]    
+After Standardization:    
+100 trees:[training: 0.7958984375, testing: 0.49829184968277207]    
+500 trees:[training: 0.7958984375, testing: 0.49389946315275746]    
+1000 trees:[training: 0.7958984375, testing: 0.4958516349438751]    
+5000 trees:[training: 0.7958984375, testing: 0.5031722791605662]    
+For all these models, although all the values do not change very much, KNN with distance weight is the model that improves the most. The distance metrics would improve the accuracy of this algorithm and when merging wealth classes 2 and 3, there are less variance in feature, so fewer neighbors would lead to closer neighbors. 
+### Results
+For the models before and after putting wealth classes 2 and 3 into a single outcome, logistic regression always produces the highest testing scores, so logistic regression model has the best performance which is also neither quite overfitting nor quite underfitting. The testing score of the logistic regression model for putting wealth classes 2 and 3 into a single outcome is slightly larger than the one that considers them seperately, so it performs slightly better than the latter one. Overall, all the models produce very close testing scores so their performances are also quite similar.
