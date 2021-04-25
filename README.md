@@ -7,6 +7,7 @@
 ### 2. [project2](https://serena-zheyiliu.github.io/DATA146_Serena/project2.html)
 ### 3. [project3](https://serena-zheyiliu.github.io/DATA146_Serena/project3.html)
 ### 4. [project5.1](https://serena-zheyiliu.github.io/DATA146_Serena/project5pt1.html)
+### 5. [project5.2](https://serena-zheyiliu.github.io/DATA146_Serena/project5pt2.html)
 
 ## Others
 ### 1. [Midterm](https://serena-zheyiliu.github.io/DATA146_Serena/Midterm.html)
