@@ -2200,3 +2200,672 @@ plt.show()
 # Comparing the two plots here also gives you a visual sense of how the model is a bit overfit!
 
 ```
+```
+### import libraries ###
+import numpy as np
+import pandas as pd
+import matplotlib
+import matplotlib.pyplot
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram
+​
+### import functions ###
+​
+from sklearn.cluster import AgglomerativeClustering as AC
+from sklearn.datasets import make_blobs as mb
+​
+### write functions ###
+​
+def GetColors(N, map_name='rainbow'):
+    cmap = matplotlib.cm.get_cmap(map_name)
+    n = np.linspace(0, N, N) / N
+    return cmap(n)
+​
+def PlotGroups(points, groups, colors, ec='black', ax='None'):
+    if ax == 'None':
+        fig, ax = plt.subplots()
+    else:
+        fig = plt.gcf()
+​
+    for i in np.unique(groups):
+        idx = (groups == i)
+        ax.scatter(points[idx, 0], points[idx, 1],
+                   color=colors[i], edgecolor=ec,
+                   label='Group ' + str(i), alpha=0.5)
+    ax.set_xlabel('$x_1$')
+    ax.set_ylabel('$x_2$')
+    ax.legend(bbox_to_anchor=[1, 0.5], loc='center left')
+    return fig, ax
+​
+def CompareClasses(actual, predicted, names=None):
+    accuracy = sum(actual == predicted) / actual.shape[0]
+    classes = pd.DataFrame(columns=['Actual', 'Predicted'])
+    classes['Actual'] = actual
+    classes['Predicted'] = predicted
+    conf_mat = pd.crosstab(classes['Predicted'], classes['Actual'])
+    if type(names) != type(None):
+        conf_mat.index = y_names
+        conf_mat.index.name = 'Predicted'
+        conf_mat.columns = y_names
+        conf_mat.columns.name = 'Actual'
+    print('Accuracy = ' + format(accuracy, '.2f'))
+    return conf_mat, accuracy
+​
+def plot_dendrogram(model, **kwargs):
+    counts = np.zeros(model.children_.shape[0])
+    n_samples = len(model.labels_)
+    for i, merge in enumerate(model.children_):
+        current_count = 0
+        for child_idx in merge:
+            if child_idx < n_samples:
+                current_count += 1
+            else:
+                current_count += counts[child_idx - n_samples]
+        counts[i] = current_count
+    linkage_matrix = np.column_stack([model.children_, model.distances_, counts]).astype(float)
+    dendrogram(linkage_matrix, **kwargs)
+    plt.xlabel('Data Point')
+    plt.ylabel('Distance')
+​
+### Part 1.  Intro to Agglomerative Heirarchical Clustering ###
+​
+# Heirarchical clustering refers to appraoches which gradually cluster the data.  In other words, they build a heirarchy of clusters! There's two main approaches to heirarchical clustering:
+​
+# 1. Agglomerative clustering: Build the clusters from the bottom-up.  In other words, we start with each data point being its own cluster, and then we succesively merge clusters that are "close" to each other.
+#
+# 2. Divisive clustersing: Build the clusters from the top-down.  In other words, start with all data points being part of a single cluster, then succesively split into smaller clusters.
+​
+# We're going to be looking at **Agglomerative Heirarchical Clustering (AHC)**.  Unlike $k$-means, with AHC we don't have to specify anything about an expected number of clusters, however we will need to consider what we mean for two clusters of points to be "close" - this concept is referred to as **linkage**.
+​
+# AHC works by:
+#
+# 1. Starting off with each data point in its own cluster
+# 2. Beginning with a distance of zero, we gradually increase the distance, and when two clusters (which may only contain one point initially) fall within that distance of each other, they are merged into a single cluster.
+# 3. What we mean by "distance between clusters" depends on the type of linkage being used.
+# 4. This process continues until all the data has been merged into a single cluster.
+#
+# The results of this type of clustering are often summarized using **dendrograms**, which can then be inspected to determine the optimal number of clusters.  I've included a function above called plot_dendrogram that we can use to make these plots.  Let's do a quick example and look at the dendrogram:
+​
+X = np.array([[0,0],
+              [0,0.1],
+              [1,1],
+              [1,1.5]])
+plt.scatter(X[:,0], X[:,1])
+plt.show()
+​
+ac = AC(n_clusters=None,distance_threshold=0)
+ac.fit(X)
+plot_dendrogram(ac)
+plt.show()
+​
+# To determine the optimal number of clusters, you'll want to start at distance=0, and then go up until you find vertical lines that are much longer than the rest. This indicates where we had to start considering much longer distances between clusters before merging them - in other words - clusters that were separated by a much larger distance than the rest of the points.
+#
+# In the above example, the blue lines are quite a bit longer than the rest, and if you imagine drawing a horizontal line through them, you'd intersect the graph twice.  This is indicating that there are two clusters in the data.
+#
+# To get the cluster labels, you can refit the model by specifying the number of clusters:
+​
+n = 2
+ac = AC(n_clusters=n)
+clusters = ac.fit_predict(X)
+​
+colors = GetColors(n)
+PlotGroups(X,clusters,colors)
+plt.show()
+​
+​
+​
+np.random.seed(147)
+n_groups = 4
+n_pts = 100
+data = mb(n_samples=n_pts, n_features=2, centers=n_groups)
+X = data[0]
+y = data[1]
+​
+ac = AC(n_clusters=None,distance_threshold=0)
+ac.fit(X)
+​
+plt.figure(figsize=(18,6))
+plot_dendrogram(ac)
+plt.xticks([])
+plt.show()
+​
+colors = GetColors(4)
+PlotGroups(X,y,colors)
+plt.show()
+​
+### Part 2.  Exploring different linkage types ###
+​
+np.random.seed(146)
+n1 = 100
+x11 = 6.3*np.random.random(size=(n1,1))
+x12 = np.sin(x11)+np.random.normal(scale=0.1,size=(n1,1))
+​
+n2 = 150
+r = 0.5; center = (5,0.5)
+theta = 2 * np.pi * np.random.random(size=(n2,1))
+x21 = r*np.cos(theta) + center[0] + np.random.normal(scale=0.1,size=(n2,1))
+x22 = r*np.sin(theta) + center[1] + np.random.normal(scale=0.1,size=(n2,1))
+​
+x1 = np.concatenate([x11,x21],axis=0)
+x2 = np.concatenate([x12,x22],axis=0)
+​
+X = np.concatenate([x1,x2],axis=1)
+plt.scatter(x1,x2,ec='k',alpha=0.5)
+plt.axis('equal')
+plt.show()
+​
+ac = AC(n_clusters=None,distance_threshold=0)
+ac.fit(X)
+plot_dendrogram(ac)
+plt.xticks([])
+plt.show()
+​
+n = 2
+ac = AC(n_clusters = n)
+clusters = ac.fit_predict(X)
+​
+colors = GetColors(n)
+PlotGroups(X,clusters,colors)
+plt.axis('equal')
+plt.show()
+​
+​
+n = 2
+ac = AC(n_clusters = n, linkage='single')
+clusters = ac.fit_predict(X)
+​
+colors = GetColors(n)
+PlotGroups(X,clusters,colors)
+plt.axis('equal')
+plt.show()
+​
+​
+### Part 3. AHC - Additional Examples ###
+​
+from sklearn.datasets import load_breast_cancer as lbc
+bc = lbc()
+X = bc.data
+y = bc.target
+​
+ac = AC(n_clusters=None, distance_threshold=0)
+ac.fit(X)
+​
+plt.figure(figsize=(12,6))
+plot_dendrogram(ac)
+plt.xticks([])
+plt.show()
+​
+n = 2
+ac = AC(n_clusters=n)
+clusters = ac.fit_predict(X)
+​
+from sklearn.manifold import TSNE
+tsne = TSNE(random_state=146)
+Xt = tsne.fit_transform(X)
+​
+colors = GetColors(n)
+PlotGroups(Xt,clusters,colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.show()
+​
+from sklearn.preprocessing import StandardScaler as SS
+ss = SS()
+Xs = ss.fit_transform(X)
+Xt = tsne.fit_transform(Xs)
+​
+ac = AC(n_clusters=None, distance_threshold=0)
+ac.fit(Xs)
+​
+plot_dendrogram(ac)
+plt.show()
+​
+n = 2
+ac = AC(n_clusters=n)
+clusters = ac.fit_predict(Xs)
+​
+colors = GetColors(n)
+PlotGroups(Xt,clusters,colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.show()
+​
+CompareClasses(y,clusters)
+```
+```
+# import libraries
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# create functions
+
+def DoKFold(model, X, y, k, random_state=146, scaler=None):
+    from sklearn.model_selection import KFold
+    kf = KFold(n_splits=k, shuffle=True, random_state=random_state)
+
+    train_scores = []
+    test_scores = []
+    train_mse = []
+    test_mse = []
+
+    for idxTrain, idxTest in kf.split(X):
+        Xtrain = X[idxTrain, :]
+        Xtest = X[idxTest, :]
+        ytrain = y[idxTrain]
+        ytest = y[idxTest]
+
+        if scaler != None:
+            Xtrain = scaler.fit_transform(Xtrain)
+            Xtest = scaler.transform(Xtest)
+
+        model.fit(Xtrain, ytrain)
+
+        train_scores.append(model.score(Xtrain, ytrain))
+        test_scores.append(model.score(Xtest, ytest))
+
+        ytrain_pred = model.predict(Xtrain)
+        ytest_pred = model.predict(Xtest)
+        train_mse.append(np.mean((ytrain - ytrain_pred) ** 2))
+        test_mse.append(np.mean((ytest - ytest_pred) ** 2))
+
+    return train_scores, test_scores, train_mse, test_mse
+def GetColors(N, map_name='rainbow'):
+    import matplotlib
+    import numpy as np
+    cmap = matplotlib.cm.get_cmap(map_name)
+    n = np.linspace(0, N, N) / N
+    return cmap(n)
+def PlotGroups(points, groups, colors, ec='black', ax='None'):
+    import matplotlib.pyplot as plt
+
+    if ax == 'None':
+        fig, ax = plt.subplots()
+    else:
+        fig = plt.gcf()
+
+    for i in np.unique(groups):
+        idx = (groups == i)
+        ax.scatter(points[idx, 0], points[idx, 1],
+                   color=colors[i], edgecolor=ec,
+                   label='Group ' + str(i), alpha=0.5)
+    ax.set_xlabel('$x_1$')
+    ax.set_ylabel('$x_2$')
+    ax.legend(bbox_to_anchor=[1, 0.5], loc='center left')
+    return fig, ax
+def CompareClasses(actual, predicted, names=None):
+    import pandas as pd
+    accuracy = sum(actual == predicted) / actual.shape[0]
+    classes = pd.DataFrame(columns=['Actual', 'Predicted'])
+    classes['Actual'] = actual
+    classes['Predicted'] = predicted
+    conf_mat = pd.crosstab(classes['Predicted'], classes['Actual'])
+
+    if type(names) != type(None):
+        conf_mat.index = y_names
+        conf_mat.index.name = 'Predicted'
+        conf_mat.columns = y_names
+        conf_mat.columns.name = 'Actual'
+    print('Accuracy = ' + format(accuracy, '.2f'))
+    return conf_mat, accuracy
+def MakeGrid(x_range, y_range):
+    import numpy as np
+    xx, yy = np.meshgrid(x_range, y_range)
+    points = np.vstack([xx.ravel(), yy.ravel()]).T
+    return points
+
+### Part 0.  Some introductory comments about clustering ###
+
+# The goal of clustering is very similar to classification - that is - we are trying to train the computer to assign labels to data points.  The main difference between clustering and classification is that **clustering refers to unsupervised learning** techniques.
+
+# In unsupervised learning, the algorithm does not have any knowledge of actual labels or classifications of any of the data points.  Clustering is therefore often an exploratory approach, the goal of which is to identify groups or "clusters" within the data, i.e. sets of data points which are more similar to each other than they are to the rest of the data.
+
+# In order to test the accuracy of our methods, in class we will be making use of datasets that do have labels. However, this information will not be provided to any of the models during training, we will be using it solely for the purposes of assessing our accuracy afterwards.  In practice, when you are doing clustering it will often be because this type of information is not available to you.
+
+### Part 1.  Introduction to Clustering with DBSCAN ###
+
+# **Density-based spatial clustering of applications with noise (DBSCAN)** is a type of clustering technique which is based on the idea that "clusters" in data are regions of high density surrounded by regions of low density.
+
+# This idea is implemented by first definining two hyperparameters:
+
+# $\epsilon$: The radius of a "neighborhood".  If two points lie within a distance $\epsilon$ of each other, then they are considered neighbors.
+#
+# $m$: The minimum number of neighbors a point must have (including itself) in order to be considered a **core point**.
+
+# The algorithm is then defined as follows:
+
+# 1. Any points that lie within a distance $\epsilon$ of a point $p$ are said to be "reachable" from $p$.
+# 2. Any point $p$ with at least $m$ neighbors is considered a core point.
+# 3. Clusters are defined as core points along with all points reachable from those cores.
+# 4. Any points which are neither cores nor reachable from a core are labeled as noise, which simply means that they are not considered to be part of any cluster.
+
+# The ability to label points as noise makes DBSCAN stand out against other methods we will see such as $k$-means and AHC, which will always assign every data point to a cluster.
+
+# There are, of course, a couple downsides:
+#
+# 1. If the clusters have different densities, then DBSCAN might not perform well since the choice of $\epsilon$ and $m$ apply to the entire dataset.
+# 2. Choosing the best values for these hyperparameters can also be difficult as it depends on the relative scale of the data.
+#
+
+# let's start with an example
+
+np.random.seed(146)
+n1 = 100
+x11 = 6.3*np.random.random(size=(n1,1))
+x12 = np.sin(x11)+np.random.normal(scale=0.1,size=(n1,1))
+
+n2 = 150
+r = 0.5; center = (5,0.5)
+theta = 2 * np.pi * np.random.random(size=(n2,1))
+x21 = r*np.cos(theta) + center[0] + np.random.normal(scale=0.1,size=(n2,1))
+x22 = r*np.sin(theta) + center[1] + np.random.normal(scale=0.1,size=(n2,1))
+
+x1 = np.concatenate([x11,x21],axis=0)
+x2 = np.concatenate([x12,x22],axis=0)
+
+X = np.concatenate([x1,x2],axis=1)
+plt.scatter(x1,x2,ec='k',alpha=0.5)
+plt.axis('equal')
+plt.show()
+
+from sklearn.cluster import DBSCAN
+e = 1
+m = 4
+
+db = DBSCAN(eps=e, min_samples=m)
+clusters = db.fit_predict(X)
+
+n = len(np.unique(clusters))
+colors = GetColors(n)
+PlotGroups(X, clusters, colors)
+plt.axis('equal')
+plt.show()
+
+### Part 2.  Some examples ###
+
+from sklearn.datasets import load_wine
+data = load_wine()
+X = data.data
+X_names = data.feature_names
+y = data.target
+
+import pandas as pd
+Xdf = pd.DataFrame(X, columns=X_names)
+Xdf.head(3)
+
+# Next we'll apply DBSCAN to this dataset.  In order to visualize our results, we'll do a dimensionality reduction after the clustering is complete.
+
+e = 1
+m = 4
+
+db = DBSCAN(eps=e, min_samples=m)
+clusters = db.fit_predict(X)
+
+from sklearn.decomposition import PCA
+pca = PCA()
+Xp = pca.fit_transform(X)
+
+n = len(np.unique(clusters))
+colors = GetColors(n)
+PlotGroups(Xp[:, 0:2], clusters, colors)
+plt.axis('equal')
+plt.xlabel('$PC_1$')
+plt.ylabel('$PC_2$')
+plt.show()
+
+# Our PCA plot is telling us something very important here.  See how all the data is basically all on a line?  This means that, in the original full-dimensional space, the data was basically all on a line!
+#
+# Based on this we should be able to reason that we are not going to find any meaningful clusters here, since the data basically just lies along one line!
+#
+# Do some feature scaling!
+
+from sklearn.preprocessing import StandardScaler as SS
+ss = SS()
+
+Xs = ss.fit_transform(X)
+Xp = pca.fit_transform(Xs)
+
+clusters = db.fit_predict(Xs)
+
+n = len(np.unique(clusters))
+colors = GetColors(n)
+PlotGroups(Xp[:, 0:2], clusters, colors)
+plt.axis('equal')
+plt.xlabel('$PC_1$')
+plt.ylabel('$PC_2$')
+plt.show()
+
+# This is looking a little better, but if there are in fact clusters in this data, I'd like to see if I can find a better view of them.  I'd like to "see" them, before I continue with my clustering analysis!
+#
+# Keep in mind that we aren't "supposed" to know yet that there are three groups in our data.  So, we should have the mindset right now that there may or may not be any clusters to be found.  We are just doing some exploratory analysis right now!
+#
+# I'll try a tSNE transformation, just to see if anything pops out.
+
+from sklearn.manifold import TSNE
+tsne = TSNE(random_state=146)
+
+Xt = tsne.fit_transform(Xs)
+
+PlotGroups(Xt,clusters, colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.axis('equal')
+plt.show()
+
+# How neat! I feel like I see three somewhat distinct groups here.  Maybe it's something, maybe it isn't!
+#
+# Let's play around with those hyperparameters now and keep in mind - we are doing the clustering in the full-dimensional space, and then viewing the results in a lower dimensional representation.  So, it may or may not work out to be the case that our clustering will actually detect what appears to be three groups above.
+
+e = 2
+m = 4
+
+db = DBSCAN(eps=e, min_samples=m)
+clusters = db.fit_predict(Xs)
+
+n = len(np.unique(clusters))
+colors = GetColors(n)
+
+PlotGroups(Xt,clusters, colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.axis('equal')
+plt.show()
+
+# What if we do the clustering on the version of the data that has had its dimensionality reduced?  I mean, I can pretty well _see_ the three clusters in the plot!
+
+e = 2
+m = 4
+
+db = DBSCAN(eps=e, min_samples=m)
+clusters = db.fit_predict(Xt)
+
+n = len(np.unique(clusters))
+colors = GetColors(n)
+
+PlotGroups(Xt,clusters, colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.axis('equal')
+plt.show()
+
+# Now let's "cheat" and take a look at the actual labels
+
+PlotGroups(Xt,y, colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.axis('equal')
+plt.show()
+
+# Finally, I'll check a confusion matrix.  Note that the labels here will not necessarily correspond to the actual labels in the data (e.g., Group 1 assigned by DBSCAN has nothing to do with the actual label y=1), so this sort of analysis may require you to reorganize/relabel the output of the model.
+
+CompareClasses(y, clusters)
+
+### Part 3.  The curse of dimensionality ###
+
+# What we've seen in the last example is known as the **Curse of Dimensionality**.  Now, wouldn't you think that having more information is better?  How is it that reducing our data to a lower dimension can actually help us achieve better results?
+
+# Well, especially when considering the distances between points, things get a little strange with high-dimensional data.
+
+# 1. Suppose you measure the height of two people, and they are both 5.5 feet.  You can imagine this representation of those two people as a point on a number line.
+# 2. With this very simple representation, these two people appear to be identical - the distance between the points representing them is 0.
+# 3. Now add another variable, perhaps their age.  Suppose one person is 19 and the other person is 20.  You can imagine representing this data as points in a 2-d plane.
+# 4.  At this point, the people look a little different - the distance between the points that represent them is now 1.
+# 5. Now add 100 more variables.  What did they eat for lunch yesterday? How long is their hair? And so on, and so on.
+# 6. It's hard (impossible!) to imagine data living in a 100 dimensional space, but you can see from the way this example has gone so far, that the points representing these people in a 100 dimensional space is going to be quite large.
+
+# As you measure more and more variables, the "volume" of the space needed to represent them grows exponentially.  Unless you are also collecting exponentially more data every time you measure a new variable, your data is going to become very sparse, relative to the space it is represented in.  This can render measurements such as the distance between points almost useless, which can in turn hinder the performance of models that use distances to derive conclusions about the data. Thus, reducing the dimensionality of your data can help improve the performance of techniques like this!
+
+from sklearn.datasets import load_breast_cancer as lbc
+bc = lbc()
+X = bc.data
+X_names = bc.feature_names
+y = bc.target
+y_names = bc.target_names
+
+Xs = ss.fit_transform(X)
+Xt = tsne.fit_transform(Xs)
+
+e = 5
+m = 15
+
+db = DBSCAN(eps=e, min_samples=m)
+clusters = db.fit_predict(Xt)
+
+n = len(np.unique(clusters))
+colors = GetColors(n)
+
+PlotGroups(Xt,clusters, colors)
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.axis('equal')
+plt.show()
+
+CompareClasses(y,clusters)
+
+# After all this manual testing, you might be wondering if there is some way to automate the search for the hyperparamters.  The answer is usually yes, so long as you can devise some meaningful way to "score" the model.  We obviously can't use the actual classifications or classification accuracy (we are doing _unsupervised_ learning after all), but I'll propose that we look at how the average within-cluster distance is changing as we vary $\epsilon$ (I won't worry about $m$ for now).
+#
+# Basically, if there was some point where we went from having some well-separated clusters to the data suddenly merging into larger clusters, this quantity should suddenly increase.  On the other hand, if the only thing that is changing is that the clusters are slowly gaining new points, then this quantity should only gradually increase.
+
+from sklearn.metrics import pairwise_distances as pdist
+
+dist_matrix = pdist(Xt)
+print(dist_matrix)
+
+print(np.triu(dist_matrix))
+
+idx = np.triu_indices_from(dist_matrix,k=1)
+dist_matrix[idx]
+
+# You may want to verify that the number of distances we are computing is correct.
+#
+# If there are $N$ data points, then the number of ways to select $k$ of them is:
+#
+# $$C(N,k) = \frac{N!}{(N-k)!k!}$$
+#
+# (here, we are interested in the case where $k=2$, that is, how many pairs of points are there in the data)
+
+dist_matrix[idx].shape
+
+Xt.shape
+
+from math import comb
+
+comb(Xt.shape[0], 2)
+
+def WithinClusterDistances(points, labels):
+    dist = []
+    for i in np.unique(labels):
+        # Ignore points labeled as noise
+        if i != -1:
+            idx = (labels == i)
+            cur_points = points[idx, :]
+            dist_matrix = pdist(cur_points)
+            dist_list = dist_matrix[np.triu_indices_from(dist_matrix, k=1)]
+            dist.append(dist_list)
+
+    # Determine the number of distances computed
+    n_pairs = sum([len(row) for row in dist])
+
+    # Compute the weighted average
+    avg_dist = 0
+    for row in dist:
+        avg_dist += sum(row) * len(row) / n_pairs
+
+    return avg_dist
+
+e_range = np.linspace(1,6,100)
+m = 15
+
+adist = []
+
+for e in e_range:
+    d = DBSCAN(eps = e, min_samples=m)
+    clusters = d.fit_predict(Xt)
+    adist.append(WithinClusterDistances(Xt,clusters))
+
+plt.figure(figsize=(12,6))
+plt.plot(e_range, adist, ':xk')
+plt.xlabel('$\\epsilon$')
+plt.ylabel('Avg Within Cluster Distance')
+plt.show()
+
+# That big jump is what we are interested in.  As we increased $\epsilon$ past that point, something about our answers drastically changed.  This is most likely due to several clusters all of a sudden being merged into a larger cluster.  Therefore, we are probably going to want to take the value of $\epsilon$ from just before that jump.
+
+dist_diff = [adist[i+1] - adist[i] for i in range(len(adist)-1)]
+idx_max_jump = np.argmax(dist_diff)
+[e_range[idx_max_jump], dist_diff[idx_max_jump]]
+
+plt.figure(figsize=(12,6))
+plt.plot(e_range[1:], dist_diff, ':xk')
+plt.xlabel('$\\epsilon$')
+plt.ylabel('$\\Delta$ Avg Within Cluster Distance')
+plt.show()
+
+d = DBSCAN(min_samples=m,eps = e_range[idx_max_jump])
+clusters = d.fit_predict(Xt)
+
+CompareClasses(y,clusters)
+
+# Now, let's say we're somewhat confident in these results and we want to take things one step farther.  Perhaps we want to train some type of classifier.  I can use the clusters predicted from the clustering as the input to something like, say KNN.
+#
+# Let's see how such a model might perform on this data.
+
+from sklearn.neighbors import KNeighborsClassifier as KNN
+
+rng = np.linspace(-30,40,75)
+points = MakeGrid(rng,rng)
+
+knn = KNN(n_neighbors = 10)
+
+knn.fit(Xt, clusters)
+regions = knn.predict(points)
+
+front_colors = ['red', 'blue', 'yellow']
+back_colors = ['magenta', 'cyan', 'orange']
+
+fig,ax = PlotGroups(points,regions,back_colors, ec=None)
+PlotGroups(Xt, clusters, front_colors, ax=ax)
+ax.get_legend().remove()
+plt.xlabel('$tSNE_1$')
+plt.ylabel('$tSNE_2$')
+plt.show()
+
+# Next up, we'll "cheat" again, and run a training/testing split on this data.
+#
+# We'll train it using the DBSCAN labels - and we'll "cheat" by scoring the model on the actual labels for the test data.  Sort of a "what if we actually did this" scenario.
+
+from sklearn.model_selection import train_test_split as tts
+Xtrain,Xtest,ytrain,ytest = tts(Xt,y,test_size=0.41, random_state=146)
+
+# Fit the DBSCAN model using the training data
+clusters = d.fit_predict(Xtrain)
+
+# Train the KNN model using these clusters
+knn = KNN(n_neighbors=10)
+knn.fit(Xtrain,clusters)
+
+y_pred = knn.predict(Xtest)
+
+# Then sometime in the future, the true answers became known to us
+CompareClasses(ytest, y_pred)
+```
